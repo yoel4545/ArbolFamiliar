@@ -1,47 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Arbol_1
+namespace ArbolFamiliar
 {
-    internal class Person
+    public class Persona
     {
-        private string name { get; set; }
-        private string id { get; set; }
+        public string name { get; set; }
+        public string id { get; set; }
         private DateTime birthdate { get; set; }
         private DateTime? deathDate { get; set; }
         public string fotoPath { get; set; }
-        private List<Person> children { get; set; }
-        private Person[] parents { get; set; }
+        private List<Persona> children { get; set; }
+        private Persona[] parents { get; set; }
         public int x { get; set; } //Coordenada x para graficar
         public int y { get; set; } //Coordenada y para graficar
         public double Latitud { get; set; }
         public double Longitud { get; set; }
 
-        public Person(string name, string id, DateTime birthdate, string photoPath, double lat, double lng) //Metodo constructor con informacion basica, para un familiar vivo
+        public Persona(string name, string id, DateTime birthdate, string photoPath, double lat, double lng) //Metodo constructor con informacion basica, para un familiar vivo
         {
             this.name = name;
             this.id = id;
             this.birthdate = birthdate;
             deathDate = null;
             this.fotoPath = photoPath;
-            children = new List<Person>();
-            parents = new Person[2]; //Maximo dos padres
+            children = new List<Persona>();
+            parents = new Persona[2]; //Maximo dos padres
             this.Latitud = lat;
             this.Longitud = lng;
         }
 
-        public Person(string name, string id, DateTime birthdate, string photoPath, DateTime deathDate) //Metodo constructor con informacion basica, para un familiar fallecido
+        public Persona(string name, string id, DateTime birthdate, string photoPath, DateTime deathDate) //Metodo constructor con informacion basica, para un familiar fallecido
         {
             this.name = name;
             this.id = id;
             this.birthdate = birthdate;
             this.deathDate = deathDate;
             this.fotoPath = photoPath;
-            children = new List<Person>();
-            parents = new Person[2]; //Maximo dos padres
+            children = new List<Persona>();
+            parents = new Persona[2]; //Maximo dos padres
         }
 
-        public void AddChild(Person child) //Anade un hijo a la lista de hijos propia
+        public void AddChild(Persona child) //Anade un hijo a la lista de hijos propia
         {
             if (children == null)
             {
@@ -65,7 +65,7 @@ namespace Arbol_1
             }
         }
 
-        public void AddParent(Person parent) //Anade un padre a la lista de padres propia
+        public void AddParent(Persona parent) //Anade un padre a la lista de padres propia
         {
             if (parent != null)
             {
@@ -80,7 +80,7 @@ namespace Arbol_1
             }
         }
 
-        public void RemoveChild(Person child) //Elimina un hijo de la lista de hijos propia
+        public void RemoveChild(Persona child) //Elimina un hijo de la lista de hijos propia
         {
             if (child != null) return;
             if (children.Contains(child))
@@ -89,7 +89,7 @@ namespace Arbol_1
             }
         }
 
-        public void RemoveParent(Person parent) //Elimina un padre de la lista de padres propia
+        public void RemoveParent(Persona parent) //Elimina un padre de la lista de padres propia
         {
             if (parent == null) return;
             if (parents[0] == parent)
@@ -102,7 +102,7 @@ namespace Arbol_1
             }
         }
 
-        public Person[] Parents => parents;
+        public Persona[] Parents => parents;
 
         public string GetName
         {
