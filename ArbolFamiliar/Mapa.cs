@@ -46,8 +46,11 @@ namespace ArbolFamiliar
             // Capa para los marcadores
             var overlay = new GMapOverlay("marcadores");
 
+            // RUTA CORREGIDA - sin comillas dobles
+            string rutaFoto1 = @"C:\Users\Usuario\Desktop\Arroz\Fondos de pantalla\gon.png";
+
             // Crear personas de prueba
-            var persona1 = new Persona("Juan Pérez", "00123456", new DateTime(1980, 1, 1), "", 9.934739, -84.087502);
+            var persona1 = new Persona("Juan Pérez", "00123456", new DateTime(1980, 1, 1), rutaFoto1, 9.934739, -84.087502);
             var persona2 = new Persona("María López", "00234567", new DateTime(1985, 5, 15), "", 10.016250, -84.216630);
             var persona3 = new Persona("Carlos Rodríguez", "00345678", new DateTime(1975, 8, 20), "", 9.863000, -83.919300);
             var persona4 = new Persona("Ana Martínez", "00456789", new DateTime(1990, 3, 10), "", 9.998200, -84.117300);
