@@ -5,19 +5,22 @@ namespace ArbolFamiliar
 {
     public class Person
     {
-        private string name { get; set; }
-        private string id { get; set; }
+        public string name { get; set; }
+        public string id { get; set; }
         private DateTime birthdate { get; set; }
         private DateTime? deathDate { get; set; }
         public string fotoPath { get; set; }
-        private List<Person> children { get; set; }
-        private Person[] parents { get; set; }
+        public List<Person> children { get; set; }
+        public Person[] parents { get; set; }
         public int x { get; set; } //Coordenada x para graficar
         public int y { get; set; } //Coordenada y para graficar
-        private Person patner { get; set; }
+        public Person patner { get; set; }
         private int level { get; set; }
+        public double Latitud { get; set; }
+        public double Longitud { get; set; }
 
-        public Person(string name, string id, DateTime birthdate, string photoPath) //Metodo constructor con informacion basica, para un familiar vivo
+
+        public Person(string name, string id, DateTime birthdate, string photoPath, double lat, double lng) //Metodo constructor con informacion basica, para un familiar vivo
         {
             this.name = name;
             this.id = id;
@@ -26,17 +29,8 @@ namespace ArbolFamiliar
             this.fotoPath = photoPath;
             children = new List<Person>();
             parents = new Person[2]; //Maximo dos padres
-        }
-
-        public Person(string name, string id, DateTime birthdate, string photoPath, DateTime deathDate) //Metodo constructor con informacion basica, para un familiar fallecido
-        {
-            this.name = name;
-            this.id = id;
-            this.birthdate = birthdate;
-            this.deathDate = deathDate;
-            this.fotoPath = photoPath;
-            children = new List<Person>();
-            parents = new Person[2]; //Maximo dos padres
+            this.Latitud = lat;    // ← NUEVO
+            this.Longitud = lng;
         }
 
         public void SetLevel(int newLevel)

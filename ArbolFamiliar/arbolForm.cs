@@ -31,10 +31,10 @@ namespace ArbolFamiliar
 
         private void ArbolForm_Load(object sender, EventArgs e)
         {
-            var fundador = new Person("Juan", "001", new DateTime(1950, 1, 1), "ejemplo");
-            var hijo1 = new Person("Carlos", "002", new DateTime(1980, 3, 12), "ejemplo");
-            var hija2 = new Person("Ana", "003", new DateTime(1982, 6, 5), "ejemplo");
-            var padre = new Person("Pablo", "005", new DateTime(1940, 6, 5), "ejemplo");
+            var fundador = new Person("Juan", "001", new DateTime(1950, 1, 1), "ejemplo", 0, 0);
+            var hijo1 = new Person("Carlos", "002", new DateTime(1980, 3, 12), "ejemplo", 0, 0);
+            var hija2 = new Person("Ana", "003", new DateTime(1982, 6, 5), "ejemplo", 0, 0);
+            var padre = new Person("Pablo", "005", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
 
             grafo.AddPerson(fundador);
             grafo.AddChildren(fundador, hijo1);
