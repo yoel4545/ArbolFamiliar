@@ -35,11 +35,15 @@ namespace ArbolFamiliar
             var hijo1 = new Person("Carlos", "002", new DateTime(1980, 3, 12), "ejemplo", 0, 0);
             var hija2 = new Person("Ana", "003", new DateTime(1982, 6, 5), "ejemplo", 0, 0);
             var padre = new Person("Pablo", "005", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
+            var madre = new Person("Laura", "006", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
+            var pareja = new Person("Jean", "006", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
 
             grafo.AddPerson(fundador);
             grafo.AddChildren(fundador, hijo1);
             grafo.AddChildren(fundador, hija2);
             grafo.AddFather(fundador, padre);
+            grafo.AddChildren(hijo1, madre);
+            grafo.AddPatner(madre, pareja);
 
             grafo.CalculatePositions();
             this.Invalidate();

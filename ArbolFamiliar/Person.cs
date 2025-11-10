@@ -33,6 +33,17 @@ namespace ArbolFamiliar
             this.Longitud = lng;
         }
 
+        public Person(string name, string id, DateTime birthdate, string photoPath)
+        {
+            this.name = name;
+            this.id = id;
+            this.birthdate = birthdate;
+            deathDate = null;
+            this.fotoPath = photoPath;
+            children = new List<Person>();
+            parents = new Person[2];
+        }
+
         public void SetLevel(int newLevel)
         {
             level = newLevel;
@@ -120,6 +131,9 @@ namespace ArbolFamiliar
 
         public Person[] Parents => parents;
         public List<Person> Children => children;
+        public int GetLevel => level;
+
+        public Person Patner => patner;
 
         public string GetName
         {
