@@ -1,13 +1,19 @@
-﻿using System;
-using System.Windows.Forms;
-using GMap.NET;
+﻿using GMap.NET;
 using GMap.NET.WindowsForms;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Windows.Forms;
+using GMap.NET.WindowsForms.Markers;
+
 
 namespace ArbolFamiliar
 {
     public partial class Mapa : Form
     {
         private GMapControl mapa;
+        private List<Person> personas;
+        private GrafoGeografico grafoGeo;
 
         public Mapa()
         {
@@ -25,9 +31,43 @@ namespace ArbolFamiliar
             this.Name = "Mapa";
             this.Text = "Mapa Familiar";
             this.Load += new System.EventHandler(this.Mapa_Load);
+
+
+
+            // Botón para ver estadísticas
+            var btnEstadisticas = new Button();
+            btnEstadisticas.Text = "Ver estadísticas";
+            btnEstadisticas.Size = new Size(150, 30);
+            btnEstadisticas.Location = new Point(10, 10);
+            btnEstadisticas.Click += BtnEstadisticas_Click;
+            this.Controls.Add(btnEstadisticas);
+
             this.ResumeLayout(false);
 
         }
+
+        private void BtnEstadisticas_Click(object sender, EventArgs e)
+        {
+
+
+            if (grafoGeo == null)
+            {
+                MessageBox.Show("No hay datos geográficos disponibles.", "Estadísticas");
+                return;
+            }
+
+            var (cercanoA, cercanoB, minDist) = grafoGeo.ObtenerParMasCercano();
+            var (lejanoA, lejanoB, maxDist) = grafoGeo.ObtenerParMasLejano();
+            double promedio = grafoGeo.CalcularDistanciaPromedio();
+
+            string mensaje = $" Estadísticas geográficas:\n\n" +
+                             $" Par más cercano:\n{cercanoA.GetName} ↔ {cercanoB.GetName}: {minDist:F2} km\n\n" +
+                             $" Par más lejano:\n{lejanoA.GetName} ↔ {lejanoB.GetName}: {maxDist:F2} km\n\n" +
+                             $" Distancia promedio entre familiares: {promedio:F2} km";
+
+            MessageBox.Show(mensaje, "Estadísticas del Mapa");
+        }
+
 
         private void InicializarMapa()
         {
@@ -57,6 +97,10 @@ namespace ArbolFamiliar
             var persona3 = new Person("Carlos Rodríguez", "00345678", new DateTime(1975, 8, 20), "", 9.863000, -83.919300);
             var persona4 = new Person("Ana Martínez", "00456789", new DateTime(1990, 3, 10), "", 9.998200, -84.117300);
 
+            personas = new List<Person> { persona1, persona2, persona3, persona4 };
+            grafoGeo = new GrafoGeografico(personas);
+
+
             // Crear marcadores personalizados
             var marcador1 = new MarcadorPersonalizado(persona1);
             var marcador2 = new MarcadorPersonalizado(persona2);
@@ -69,6 +113,54 @@ namespace ArbolFamiliar
             overlay.Markers.Add(marcador3);
             overlay.Markers.Add(marcador4);
 
+
+            var textosKm = new List<GMapMarker>();
+
+            // Crear líneas entre todos los pares
+            foreach (var origen in overlay.Markers)
+            {
+                foreach (var destino in overlay.Markers)
+                {
+                    if (origen != destino &&
+                        origen is MarcadorPersonalizado marcadorA &&
+                        destino is MarcadorPersonalizado marcadorB)
+                    {
+                        var personaA = marcadorA.persona;
+                        var personaB = marcadorB.persona;
+
+                        // Verifica que exista la distancia entre A y B
+                        if (grafoGeo.GetDistancias().TryGetValue(personaA, out var distanciasDesdeA) &&
+                            distanciasDesdeA.TryGetValue(personaB, out double distanciaKm))
+                        {
+                            // Dibujar línea
+                                    var ruta = new GMapRoute(new List<PointLatLng>
+                        {
+                            origen.Position,
+                            destino.Position
+                        }, "ruta");
+
+                            ruta.Stroke = new Pen(Color.DarkGray, 1);
+                            overlay.Routes.Add(ruta);
+
+                            // Calcular punto medio
+                            double latMedio = (origen.Position.Lat + destino.Position.Lat) / 2;
+                            double lonMedio = (origen.Position.Lng + destino.Position.Lng) / 2;
+                            var puntoMedio = new PointLatLng(latMedio, lonMedio);
+
+                            // Crear marcador de texto
+                            var textoKm = new TextoEnMapa(puntoMedio, $"{distanciaKm:F1} km");
+                            textosKm.Add(textoKm);
+
+                        }
+                    }
+                }
+            }
+
+            foreach (var texto in textosKm)
+            {
+                overlay.Markers.Add(texto);
+            }
+
             // Agregar capa al mapa
             mapa.Overlays.Add(overlay);
 
@@ -77,16 +169,33 @@ namespace ArbolFamiliar
             {
                 if (marker is MarcadorPersonalizado marcadorPersonalizado)
                 {
-                    string mensaje = $"Nombre: {marcadorPersonalizado.persona.GetName}\n" +
-                                   $"Cédula: {marcadorPersonalizado.persona.id}\n" +
-                                   $"Coordenadas: {marcadorPersonalizado.persona.Latitud:F4}, " +
-                                   $"{marcadorPersonalizado.persona.Longitud:F4}";
+                    var persona = marcadorPersonalizado.persona;
+                    string mensaje = $"Información de la Persona:\n" +
+                                     $"Nombre: {persona.GetName}\n" +
+                                     $"Cédula: {persona.id}\n" +
+                                     $"Coordenadas: {persona.Latitud:F4}, {persona.Longitud:F4}\n\n";
 
-                    MessageBox.Show(mensaje, "Información de la Persona");
+                    if (grafoGeo != null && grafoGeo.GetDistancias().ContainsKey(persona))
+                    {
+                        mensaje += $"Distancias desde {persona.GetName}:\n";
+                        foreach (var kvp in grafoGeo.GetDistancias()[persona])
+                        {
+                            mensaje += $"- {kvp.Key.GetName}: {kvp.Value:F2} km\n";
+                        }
+                    }
+                    else
+                    {
+                        mensaje += "No se encontraron distancias geográficas.";
+                    }
+
+                    MessageBox.Show(mensaje, "Detalles del Familiar");
                 }
             };
+
         }
 
+
+        
         private void Mapa_Load(object sender, EventArgs e)
         {
 

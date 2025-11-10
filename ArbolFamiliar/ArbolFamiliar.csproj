@@ -79,6 +79,7 @@
     <Compile Include="Person.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TextoEnMapa.cs" />
     <EmbeddedResource Include="arbolForm.resx">
       <DependentUpon>arbolForm.cs</DependentUpon>
     </EmbeddedResource>
