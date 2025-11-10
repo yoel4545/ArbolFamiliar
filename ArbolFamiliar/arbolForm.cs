@@ -95,5 +95,10 @@ namespace ArbolFamiliar
 
             Invalidate();
         }
+
+        private void arbolForm_Load_1(object sender, EventArgs e)
+        {
+
+        }
     }
 }

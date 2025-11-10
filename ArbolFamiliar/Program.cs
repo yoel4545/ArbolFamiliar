@@ -16,7 +16,7 @@ namespace ArbolFamiliar
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new arbolForm());
+            Application.Run(new Form1());
         }
     }
 }

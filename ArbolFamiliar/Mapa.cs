@@ -24,7 +24,9 @@ namespace ArbolFamiliar
             this.ClientSize = new System.Drawing.Size(800, 600);
             this.Name = "Mapa";
             this.Text = "Mapa Familiar";
+            this.Load += new System.EventHandler(this.Mapa_Load);
             this.ResumeLayout(false);
+
         }
 
         private void InicializarMapa()
@@ -83,6 +85,11 @@ namespace ArbolFamiliar
                     MessageBox.Show(mensaje, "Información de la Persona");
                 }
             };
+        }
+
+        private void Mapa_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }
