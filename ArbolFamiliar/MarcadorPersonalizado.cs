@@ -8,10 +8,10 @@ namespace ArbolFamiliar
 {
     public class MarcadorPersonalizado : GMapMarker
     {
-        public Persona persona;
+        public Person persona;
         private Image foto;
 
-        public MarcadorPersonalizado(Persona persona)
+        public MarcadorPersonalizado(Person persona)
             : base(new PointLatLng(persona.Latitud, persona.Longitud))
         {
             this.persona = persona;

@@ -3,45 +3,42 @@ using System.Collections.Generic;
 
 namespace ArbolFamiliar
 {
-    public class Persona
+    public class Person
     {
         public string name { get; set; }
         public string id { get; set; }
         private DateTime birthdate { get; set; }
         private DateTime? deathDate { get; set; }
         public string fotoPath { get; set; }
-        private List<Persona> children { get; set; }
-        private Persona[] parents { get; set; }
+        public List<Person> children { get; set; }
+        public Person[] parents { get; set; }
         public int x { get; set; } //Coordenada x para graficar
         public int y { get; set; } //Coordenada y para graficar
+        public Person patner { get; set; }
+        private int level { get; set; }
         public double Latitud { get; set; }
         public double Longitud { get; set; }
 
-        public Persona(string name, string id, DateTime birthdate, string photoPath, double lat, double lng) //Metodo constructor con informacion basica, para un familiar vivo
+
+        public Person(string name, string id, DateTime birthdate, string photoPath, double lat, double lng) //Metodo constructor con informacion basica, para un familiar vivo
         {
             this.name = name;
             this.id = id;
             this.birthdate = birthdate;
             deathDate = null;
             this.fotoPath = photoPath;
-            children = new List<Persona>();
-            parents = new Persona[2]; //Maximo dos padres
-            this.Latitud = lat;
+            children = new List<Person>();
+            parents = new Person[2]; //Maximo dos padres
+            this.Latitud = lat;    // ← NUEVO
             this.Longitud = lng;
         }
 
-        public Persona(string name, string id, DateTime birthdate, string photoPath, DateTime deathDate) //Metodo constructor con informacion basica, para un familiar fallecido
+        public void SetLevel(int newLevel)
         {
-            this.name = name;
-            this.id = id;
-            this.birthdate = birthdate;
-            this.deathDate = deathDate;
-            this.fotoPath = photoPath;
-            children = new List<Persona>();
-            parents = new Persona[2]; //Maximo dos padres
+            level = newLevel;
         }
 
-        public void AddChild(Persona child) //Anade un hijo a la lista de hijos propia
+        public void AddChild(Person child) //Anade un hijo a la lista de hijos propia
         {
             if (children == null)
             {
@@ -50,7 +47,25 @@ namespace ArbolFamiliar
             if (child != null && !children.Contains(child))
             {
                 children.Add(child);
+                child.SetLevel(level + 1);
             }
+        }
+
+        public void AddPatner(Person newPatner)
+        {
+            patner = newPatner;
+            newPatner.SetLevel(level);
+        }
+
+        public bool CanAddPatner()
+        {
+            if (patner != null) return false;
+            return true;
+        }
+
+        public void AddChildList(Person existingPatner)
+        {
+            children = existingPatner.Children;
         }
 
         public bool CanAddParent() //Revisa si se puede anadir un padre, dos disponibles los cuales son nulos si hay espacio
@@ -65,7 +80,7 @@ namespace ArbolFamiliar
             }
         }
 
-        public void AddParent(Persona parent) //Anade un padre a la lista de padres propia
+        public void AddParent(Person parent) //Anade un padre a la lista de padres propia
         {
             if (parent != null)
             {
@@ -77,10 +92,11 @@ namespace ArbolFamiliar
                 {
                     parents[1] = parent;
                 }
+                parent.SetLevel(level - 1);
             }
         }
 
-        public void RemoveChild(Persona child) //Elimina un hijo de la lista de hijos propia
+        public void RemoveChild(Person child) //Elimina un hijo de la lista de hijos propia
         {
             if (child != null) return;
             if (children.Contains(child))
@@ -89,7 +105,7 @@ namespace ArbolFamiliar
             }
         }
 
-        public void RemoveParent(Persona parent) //Elimina un padre de la lista de padres propia
+        public void RemoveParent(Person parent) //Elimina un padre de la lista de padres propia
         {
             if (parent == null) return;
             if (parents[0] == parent)
@@ -102,7 +118,8 @@ namespace ArbolFamiliar
             }
         }
 
-        public Persona[] Parents => parents;
+        public Person[] Parents => parents;
+        public List<Person> Children => children;
 
         public string GetName
         {
