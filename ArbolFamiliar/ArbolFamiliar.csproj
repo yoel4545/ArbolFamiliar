@@ -65,6 +65,7 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="GrafoGeofrafico.cs" />
     <Compile Include="Mapa.cs">
       <SubType>Form</SubType>
     </Compile>
