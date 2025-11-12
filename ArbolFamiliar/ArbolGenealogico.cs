@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Windows.Forms;
 using ArbolFamiliar;
 
 namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un hijo o padre, que sea coherente. Faltan los metodos para cordenadas.
@@ -20,6 +21,13 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             verticalSpacing = 125;
             radius = 30;
         }
+        public IEnumerable<Person> GetAllPersons()
+        {
+            return adyacencia.Keys;
+        }
+
+        public int Radius => radius;
+
         public void AddPerson(Person p) //Anadir persona al grafo
         {
             if (p == null)
@@ -250,7 +258,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             // Asumimos que todos los nodos relevantes están en 'byLevel' y quedan posicionados.
         }
 
-        public void Draw(Graphics g)
+        public void DrawNodes(Graphics g)
         {
             if (adyacencia.Count == 0) return;
 
@@ -332,10 +340,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                 float textX = p.x + radius - textSize.Width / 2;
                 float textY = p.y + radius - textSize.Height / 2;
                 g.DrawString(p.GetName, font, texto, textX, textY);
-
-                Debug.WriteLine($"Dibujando {p.GetName} en ({p.x},{p.y})");
             }
         }
-
     }
 }

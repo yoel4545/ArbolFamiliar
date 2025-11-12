@@ -59,6 +59,7 @@
       <DependentUpon>arbolForm.cs</DependentUpon>
     </Compile>
     <Compile Include="ArbolGenealogico.cs" />
+    <Compile Include="Button.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

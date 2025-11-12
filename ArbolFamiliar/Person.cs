@@ -146,5 +146,7 @@ namespace ArbolFamiliar
         {
             get => name;
         }
+
+        public string GetId => id;
     }
 }
