@@ -241,6 +241,11 @@ namespace ArbolFamiliar
             return null;
         }
 
+        private void button1_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
         private void BtnAddChild_Click(object sender, EventArgs e)
         {
             Debug.WriteLine("Pressed");
