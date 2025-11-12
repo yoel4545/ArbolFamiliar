@@ -53,7 +53,6 @@ namespace ArbolFamiliar
             this.Controls.Add(this.button1);
             this.Controls.Add(this.btnEstadisticas);
             this.Name = "Mapa";
-            this.Text = "Mapa Familiar";
             this.Load += new System.EventHandler(this.Mapa_Load);
             this.ResumeLayout(false);
 
