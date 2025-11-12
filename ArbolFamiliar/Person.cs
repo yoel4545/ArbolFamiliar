@@ -13,8 +13,8 @@ namespace ArbolFamiliar
         public string fotoPath { get; set; }
         public List<Person> children { get; set; }
         public Person[] parents { get; set; }
-        public int x { get; set; } //Coordenada x para graficar
-        public int y { get; set; } //Coordenada y para graficar
+        public float x { get; set; } //Coordenada x para graficar
+        public float y { get; set; } //Coordenada y para graficar
         public Person partner { get; set; }
         private int level { get; set; }
         public double Latitud { get; set; }
