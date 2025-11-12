@@ -33,6 +33,17 @@ namespace ArbolFamiliar
             this.Longitud = lng;
         }
 
+        public Person(string name, string id, DateTime birthdate, string photoPath)
+        {
+            this.name = name;
+            this.id = id;
+            this.birthdate = birthdate;
+            deathDate = null;
+            this.fotoPath = photoPath;
+            children = new List<Person>();
+            parents = new Person[2];
+        }
+
         public void SetLevel(int newLevel)
         {
             level = newLevel;
@@ -72,6 +83,13 @@ namespace ArbolFamiliar
         {
             if (parents[0] == null || parents[1] == null)
             {
+                if (patner != null)
+                {
+                    if (patner.parents[1] != null && patner.parents[0] != null)
+                    {
+                        return false;
+                    }
+                }
                 return true;
             }
             else
@@ -120,10 +138,15 @@ namespace ArbolFamiliar
 
         public Person[] Parents => parents;
         public List<Person> Children => children;
+        public int GetLevel => level;
+
+        public Person Patner => patner;
 
         public string GetName
         {
             get => name;
         }
+
+        public string GetId => id;
     }
 }
