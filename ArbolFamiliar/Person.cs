@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ArbolFamiliar
 {
@@ -14,7 +15,7 @@ namespace ArbolFamiliar
         public Person[] parents { get; set; }
         public int x { get; set; } //Coordenada x para graficar
         public int y { get; set; } //Coordenada y para graficar
-        public Person patner { get; set; }
+        public Person partner { get; set; }
         private int level { get; set; }
         public double Latitud { get; set; }
         public double Longitud { get; set; }
@@ -62,56 +63,99 @@ namespace ArbolFamiliar
             }
         }
 
-        public void AddPatner(Person newPatner)
+        public bool CanAddPartner(Person newPartner)
         {
-            patner = newPatner;
-            newPatner.SetLevel(level);
-        }
+            // No puede tener ya pareja
+            if (partner != null) return false;
 
-        public bool CanAddPatner()
-        {
-            if (patner != null) return false;
+            // La nueva persona tampoco debe tener pareja
+            if (newPartner.partner != null) return false;
+
+            // Evitar asignarse a sí mismo
+            if (newPartner == this) return false;
+
             return true;
         }
 
-        public void AddChildList(Person existingPatner)
+        public void AddPartner(Person newPartner)
         {
-            children = existingPatner.Children;
+            if (!CanAddPartner(newPartner)) return; // protección
+
+            partner = newPartner;
+            newPartner.partner = this;
+
+            newPartner.SetLevel(level);
+            newPartner.children = this.children; // comparten lista de hijos
         }
 
-        public bool CanAddParent() //Revisa si se puede anadir un padre, dos disponibles los cuales son nulos si hay espacio
+        public void AddChildList(Person existingPartner)
         {
-            if (parents[0] == null || parents[1] == null)
-            {
-                if (patner != null)
-                {
-                    if (patner.parents[1] != null && patner.parents[0] != null)
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            children = existingPartner.Children;
         }
 
-        public void AddParent(Person parent) //Anade un padre a la lista de padres propia
+        public bool CanAddParent()
         {
-            if (parent != null)
+            if (parents[0] != null && parents[1] != null) return false;
+
+            // Si tengo pareja y la pareja ya tiene algún padre -> no permitir
+            if (partner != null)
             {
-                if (parents[0] == null)
-                {
-                    parents[0] = parent;
-                }
-                else if (parents[1] == null)
-                {
-                    parents[1] = parent;
-                }
-                parent.SetLevel(level - 1);
+                if ((partner.parents[0] != null) || (partner.parents[1] != null))
+                    return false;
             }
+
+            return true;
+        }
+
+        public void AddParent(Person parent)
+        {
+            if (parent == null) return;
+            if (!CanAddParent()) return;
+
+            // asignar en el primer slot libre
+            if (parents[0] == null)
+            {
+                parents[0] = parent;
+            }
+            else if (parents[1] == null)
+            {
+                parents[1] = parent;
+            }
+
+            if (!parent.children.Contains(this))
+            {
+                parent.children.Add(this);
+            }
+
+            // Si el padre ya tiene pareja, ese partner también debe tener este hijo
+            if (parent.partner != null)
+            {
+                if (parent.partner.children == null) parent.partner.children = parent.children;
+                else if (!parent.partner.children.Contains(this))
+                {
+                    parent.partner.children.Add(this);
+                }
+            }
+
+            // Si ahora tengo ambos padres, asegurar que los padres sean pareja entre sí
+            if (parents[0] != null && parents[1] != null)
+            {
+                // establecer pareja mutua entre los padres
+                if (parents[0].partner != parents[1])
+                {
+                    parents[0].AddPartner(parents[1]);
+                }
+
+                if (parents[1].partner != parents[0])
+                {
+                    parents[1].AddPartner(parents[0]);
+                }
+                    
+            }
+
+            parent.SetLevel(this.level - 1);
+            if (parent.partner != null)
+                parent.partner.SetLevel(parent.GetLevel); // pareja al mismo nivel
         }
 
         public void RemoveChild(Person child) //Elimina un hijo de la lista de hijos propia
@@ -140,7 +184,7 @@ namespace ArbolFamiliar
         public List<Person> Children => children;
         public int GetLevel => level;
 
-        public Person Patner => patner;
+        public Person Partner => partner;
 
         public string GetName
         {
