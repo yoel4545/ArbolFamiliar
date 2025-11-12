@@ -80,13 +80,11 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             CalculatePositions();
         }
 
-
         public void DeletePerson(Person p)
         {
             if (p == null) return;
             if (!adyacencia.ContainsKey(p)) return;
 
-            // Helper para comprobar si tiene padres
             bool HasParents(Person x) =>
                 x.Parents != null && x.Parents.Any(par => par != null);
 
@@ -94,17 +92,56 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             if (!HasParents(p) && p.Partner == null)
             {
                 DeleteSubtree(p);
+
+                // reconstruir y recalcular
+                RebuildAdjacency();
+                CalculatePositions();
                 return;
             }
 
-            // --- Caso 2: No tiene padres pero tiene pareja → borrar solo p ---
+            // --- Caso 2: No tiene padres pero tiene pareja → borrar solo p, hijos pasan a la pareja ---
             if (!HasParents(p) && p.Partner != null)
             {
                 var pareja = p.Partner;
+
+                // Asegurar que la pareja esté registrada en adyacencia
+                if (!adyacencia.ContainsKey(pareja)) AddPerson(pareja);
+
+                // Mover hijos a la pareja (y actualizar Parents)
+                var hijos = new List<Person>(p.Children);
+                foreach (var h in hijos)
+                {
+                    // Reemplazar referencias de padres en el hijo: p -> pareja
+                    if (h.Parents != null)
+                    {
+                        for (int i = 0; i < h.Parents.Length; i++)
+                        {
+                            if (h.Parents[i] == p)
+                                h.Parents[i] = pareja;
+                        }
+                    }
+
+                    // Agregar hijo a la pareja si aún no lo tiene
+                    if (!pareja.Children.Contains(h))
+                    {
+                        pareja.AddChild(h);
+                    }
+
+                    // Asegurar que adyacencia tenga la relación pareja -> hijo
+                    if (!adyacencia.ContainsKey(pareja)) adyacencia[pareja] = new List<Person>();
+                    if (!adyacencia[pareja].Contains(h))
+                        adyacencia[pareja].Add(h);
+                }
+
+                // Romper relación de pareja y eliminar sólo p
                 pareja.partner = null;
                 p.partner = null;
 
                 RemoveSingleNode(p);
+
+                // reconstruir y recalcular
+                RebuildAdjacency();
+                CalculatePositions();
                 return;
             }
 
@@ -116,6 +153,9 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                 pareja.partner = null;
 
                 DeleteSubtree(pareja);
+
+                RebuildAdjacency();
+                CalculatePositions();
                 return;
             }
 
@@ -123,9 +163,13 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             if (HasParents(p) && p.Partner == null)
             {
                 RemoveSingleNode(p);
+
+                RebuildAdjacency();
+                CalculatePositions();
                 return;
             }
         }
+
 
         // Elimina todo el subárbol de "root" (ella y todos sus descendientes)
         private void DeleteSubtree(Person root)
@@ -543,6 +587,62 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                 float textY = p.y + radius - textSize.Height / 2;
                 g.DrawString(p.GetName, font, texto, textX, textY);
             }
+        }
+
+        private void RebuildAdjacency()
+        {
+            // Recolectar todos los nodos que aún existen (empezamos con las claves actuales)
+            var all = new HashSet<Person>(adyacencia.Keys);
+
+            // Añadir nodos referenciados desde children/parents/partner para no perderlos
+            foreach (var p in adyacencia.Keys.ToList())
+            {
+                if (p.Children != null)
+                {
+                    foreach (var c in p.Children)
+                    {
+                        if (c != null) all.Add(c);
+                    }
+                }
+
+                if (p.Parents != null)
+                {
+                    foreach (var par in p.Parents)
+                    {
+                        if (par != null) all.Add(par);
+                    }
+                }
+
+                if (p.Partner != null)
+                {
+                    all.Add(p.Partner);
+                }
+            }
+
+            // Construir nuevo diccionario vacío
+            var nueva = new Dictionary<Person, List<Person>>();
+            foreach (var p in all)
+            {
+                if (!nueva.ContainsKey(p))
+                    nueva[p] = new List<Person>();
+            }
+
+            // Poblar con las listas Children actuales (filtrando nulls y asegurando claves)
+            foreach (var p in all)
+            {
+                if (p.Children == null) continue;
+                foreach (var c in p.Children)
+                {
+                    if (c == null) continue;
+                    // Asegurarnos de que la clave exista (ya lo hacemos arriba)
+                    if (!nueva.ContainsKey(p)) nueva[p] = new List<Person>();
+                    if (!nueva[p].Contains(c))
+                        nueva[p].Add(c);
+                }
+            }
+
+            // Reemplazar la estructura
+            adyacencia = nueva;
         }
     }
 }
