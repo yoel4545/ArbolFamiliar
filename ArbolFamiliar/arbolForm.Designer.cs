@@ -34,7 +34,6 @@
             // 
             this.ClientSize = new System.Drawing.Size(930, 446);
             this.Name = "arbolForm";
-            this.Load += new System.EventHandler(this.arbolForm_Load_1);
             this.ResumeLayout(false);
 
         }

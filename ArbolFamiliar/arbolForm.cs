@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
-using ArbolFamiliar;
 
 namespace ArbolFamiliar
 {
@@ -15,7 +13,11 @@ namespace ArbolFamiliar
         private GrafoGenealogico grafo;
         private float zoom = 1.0f;
         private Person selectedPerson = null;
-        private List<Button> uiButtons = new List<Button>();
+
+        // Panel lateral y botones
+        private Panel sidePanel;
+        private Label infoLabel;
+        private Button btnAddChild, btnAddPartner, btnDelete, btnClose;
 
         public arbolForm()
         {
@@ -26,57 +28,134 @@ namespace ArbolFamiliar
             grafo = new GrafoGenealogico();
 
             this.Load += ArbolForm_Load;
+            this.Paint += ArbolForm_Paint;
             this.MouseDown += ArbolForm_MouseDown;
             this.MouseMove += ArbolForm_MouseMove;
             this.MouseUp += ArbolForm_MouseUp;
             this.MouseWheel += ArbolForm_MouseWheel;
-            this.Paint += ArbolForm_Paint;
+
+            InitSidePanel();
         }
+
+        private void InitSidePanel()
+        {
+            sidePanel = new Panel
+            {
+                Dock = DockStyle.Left,
+                Width = 250,
+                BackColor = Color.FromArgb(245, 245, 245)
+            };
+            this.Controls.Add(sidePanel);
+
+            // --- Título ---
+            Label title = new Label
+            {
+                Text = "📋 Información",
+                Font = new Font("Arial", 12, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Location = new Point(10, 10),
+                Size = new Size(180, 30)
+            };
+            sidePanel.Controls.Add(title);
+
+            // --- Botón de cerrar (arriba derecha) ---
+            btnClose = new Button
+            {
+                Text = "✖",
+                ForeColor = Color.White,
+                BackColor = Color.IndianRed,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Arial", 10, FontStyle.Bold),
+                Size = new Size(30, 30),
+                Location = new Point(sidePanel.Width - 40, 10),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
+            };
+            btnClose.Click += (s, e) => { selectedPerson = null; UpdateInfoPanel(); Invalidate(); };
+            sidePanel.Controls.Add(btnClose);
+
+            // --- Etiqueta con la información ---
+            infoLabel = new Label
+            {
+                Text = "Ninguna persona seleccionada",
+                Font = new Font("Arial", 9),
+                Location = new Point(10, 50),
+                Size = new Size(sidePanel.Width - 20, 140),
+                AutoSize = false,
+                TextAlign = ContentAlignment.TopLeft
+            };
+            sidePanel.Controls.Add(infoLabel);
+
+            // --- Botones inferiores ---
+            int buttonWidth = sidePanel.Width - 40;
+            int buttonHeight = 40;
+            int bottomY = sidePanel.Height - (buttonHeight + 10) * 3 - 20;
+
+            btnAddChild = new Button
+            {
+                Text = "Agregar Hijo",
+                Size = new Size(buttonWidth, buttonHeight),
+                Location = new Point(20, bottomY),
+                BackColor = Color.LightBlue,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+            };
+            btnAddChild.Click += (s, e) => Debug.WriteLine("Agregar hijo");
+            sidePanel.Controls.Add(btnAddChild);
+
+            btnAddPartner = new Button
+            {
+                Text = "Agregar Pareja",
+                Size = new Size(buttonWidth, buttonHeight),
+                Location = new Point(20, bottomY + buttonHeight + 10),
+                BackColor = Color.LightBlue,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+            };
+            btnAddPartner.Click += (s, e) => Debug.WriteLine("Agregar pareja");
+            sidePanel.Controls.Add(btnAddPartner);
+
+            btnDelete = new Button
+            {
+                Text = "Eliminar",
+                Size = new Size(buttonWidth, buttonHeight),
+                Location = new Point(20, bottomY + (buttonHeight + 10) * 2),
+                BackColor = Color.LightCoral,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+            };
+            btnDelete.Click += (s, e) => Debug.WriteLine("Eliminar");
+            sidePanel.Controls.Add(btnDelete);
+
+            UpdateInfoPanel();
+        }
+
 
         private void ArbolForm_Load(object sender, EventArgs e)
         {
-            var fundador = new Person("Juan", "001", new DateTime(1950, 1, 1), "ejemplo", 0, 0);
-            var hijo1 = new Person("Carlos", "002", new DateTime(1980, 3, 12), "ejemplo", 0, 0);
-            var hija2 = new Person("Ana", "003", new DateTime(1982, 6, 5), "ejemplo", 0, 0);
-            var padre = new Person("Pablo", "005", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
-            var madre = new Person("Laura", "006", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
-            var pareja = new Person("Jean", "006", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
-            var hermano = new Person("julio", "006", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
+            var fundador = new Person("Juan", "001", new DateTime(1950, 1, 1), "foto", 0, 0);
+            var hijo1 = new Person("Carlos", "002", new DateTime(1980, 3, 12), "foto", 0, 0);
+            var hija2 = new Person("Ana", "003", new DateTime(1982, 6, 5), "foto", 0, 0);
+            var pareja = new Person("Laura", "004", new DateTime(1955, 9, 10), "foto", 0, 0);
 
             grafo.AddPerson(fundador);
             grafo.AddChildren(fundador, hijo1);
             grafo.AddChildren(fundador, hija2);
-            grafo.AddFather(fundador, padre);
-            grafo.AddChildren(hijo1, madre);
-            grafo.AddPatner(madre, pareja);
-            
+            grafo.AddPatner(fundador, pareja);
 
             grafo.CalculatePositions();
-            this.Invalidate();
+            Invalidate();
         }
 
         private void ArbolForm_Paint(object sender, PaintEventArgs e)
         {
-            e.Graphics.TranslateTransform(panOffset.X, panOffset.Y);
+            e.Graphics.TranslateTransform(panOffset.X + sidePanel.Width, panOffset.Y);
             e.Graphics.ScaleTransform(zoom, zoom);
             grafo.DrawNodes(e.Graphics);
-            e.Graphics.ResetTransform();
-            DrawUI(e.Graphics);
         }
 
         private void ArbolForm_MouseDown(object sender, MouseEventArgs e)
         {
-            foreach (var btn in uiButtons)
-            {
-                if (btn.Contains(e.Location))
-                {
-                    btn.Click();
-                    return;
-                }
-            }
-            if (e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Left && e.X > sidePanel.Width)
             {
                 selectedPerson = DetectClickedPerson(e);
+                UpdateInfoPanel();
                 dragging = true;
                 lastMouse = e.Location;
             }
@@ -102,14 +181,8 @@ namespace ArbolFamiliar
         private void ArbolForm_MouseWheel(object sender, MouseEventArgs e)
         {
             float oldZoom = zoom;
-
-            if (e.Delta > 0)
-                zoom *= 1.1f;
-            else
-                zoom /= 1.1f;
-
+            zoom = e.Delta > 0 ? zoom * 1.1f : zoom / 1.1f;
             zoom = Math.Max(0.1f, Math.Min(zoom, 5.0f));
-
 
             panOffset.X = (int)(e.X - (e.X - panOffset.X) * (zoom / oldZoom));
             panOffset.Y = (int)(e.Y - (e.Y - panOffset.Y) * (zoom / oldZoom));
@@ -117,119 +190,36 @@ namespace ArbolFamiliar
             Invalidate();
         }
 
-        private void arbolForm_Load_1(object sender, EventArgs e)
-        {
-
-        }
-
         private Person DetectClickedPerson(MouseEventArgs e)
         {
-            // Convertir coordenadas de pantalla a coordenadas del grafo (si hay zoom o pan)
-            float worldX = (e.X - panOffset.X) / zoom;
+            float worldX = (e.X - panOffset.X - sidePanel.Width) / zoom;
             float worldY = (e.Y - panOffset.Y) / zoom;
 
-            // Radio de los nodos (ajusta si usas otro tamaño)
-            int radius = grafo.Radius; // o usa una constante si lo tienes fijo
-
-            // Buscar si se hizo clic dentro de algún nodo
+            int radius = grafo.Radius;
             foreach (var p in grafo.GetAllPersons())
             {
                 float dx = worldX - (p.x + radius);
                 float dy = worldY - (p.y + radius);
-                float dist = (float)Math.Sqrt(dx * dx + dy * dy);
-
-                if (dist <= radius)
-                {
-                    Invalidate(); // Redibujar para resaltar el nodo
+                if (Math.Sqrt(dx * dx + dy * dy) <= radius)
                     return p;
-                }
             }
-
-            // Si no se hizo clic en ningún nodo
             return null;
         }
 
-        public void DrawUI(Graphics g)
+        private void UpdateInfoPanel()
         {
-            int panelWidth = 250;
-            int panelHeight = 400;
-            int margin = 10;
-
-            Rectangle panelRect = new Rectangle(margin, margin, panelWidth, panelHeight);
-            using (SolidBrush bgBrush = new SolidBrush(Color.FromArgb(240, 240, 240)))
-                g.FillRectangle(bgBrush, panelRect);
-            using (Pen borderPen = new Pen(Color.Gray, 2))
-                g.DrawRectangle(borderPen, panelRect);
-
-            int closeSize = 25;
-            Rectangle closeRect = new Rectangle(margin + panelWidth - closeSize - 5, margin + 5, closeSize, closeSize);
-
-            if (uiButtons.Count == 0)
+            if (selectedPerson == null)
             {
-                uiButtons.Add(new Button(closeRect, "X", () =>
-                {
-                    selectedPerson = null;
-                    Invalidate();
-                })
-                {
-                    BackgroundColor = Color.FromArgb(220, 100, 100),
-                    BorderColor = Color.DarkRed,
-                    TextColor = Color.White,
-                    Font = new Font("Arial", 12, FontStyle.Bold)
-                });
-
-                int buttonY = panelRect.Bottom - 150;
-                int buttonHeight = 35;
-                int buttonSpacing = 15;
-                int buttonX = margin + 15;
-                int buttonWidth = panelWidth - 40;
-
-                uiButtons.Add(new Button(new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight), "Agregar Hijo", () =>
-                {
-                    Debug.WriteLine("Agregar hijo presionado");
-                }));
-
-                buttonY += buttonHeight + buttonSpacing;
-                uiButtons.Add(new Button(new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight), "Agregar Pareja", () =>
-                {
-                    Debug.WriteLine("Agregar pareja presionado");
-                }));
-
-                buttonY += buttonHeight + buttonSpacing;
-                uiButtons.Add(new Button(new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight), "Eliminar", () =>
-                {
-                    Debug.WriteLine("Eliminar presionado");
-                }));
-            }
-
-            Font titleFont = new Font("Arial", 12, FontStyle.Bold);
-            Font normalFont = new Font("Arial", 10);
-            Brush textBrush = Brushes.Black;
-
-            int textX = margin + 15;
-            int textY = margin + 15;
-            g.DrawString("📋 Información", titleFont, textBrush, textX, textY);
-            textY += 35;
-
-            if (selectedPerson != null)
-            {
-                g.DrawString($"Nombre: {selectedPerson.GetName}", normalFont, textBrush, textX, textY);
-                textY += 25;
-                g.DrawString($"ID: {selectedPerson.GetId}", normalFont, textBrush, textX, textY);
-                textY += 25;
-                g.DrawString($"Nivel: {selectedPerson.GetLevel}", normalFont, textBrush, textX, textY);
-                textY += 25;
-                g.DrawString($"Hijos: {selectedPerson.Children.Count}", normalFont, textBrush, textX, textY);
+                infoLabel.Text = "Ninguna persona seleccionada";
             }
             else
             {
-                g.DrawString("Ninguna persona seleccionada", normalFont, textBrush, textX, textY);
+                infoLabel.Text =
+                    $"Nombre: {selectedPerson.GetName}\n" +
+                    $"ID: {selectedPerson.GetId}\n" +
+                    $"Nivel: {selectedPerson.GetLevel}\n" +
+                    $"Hijos: {selectedPerson.Children.Count}";
             }
-
-            foreach (var btn in uiButtons)
-                btn.Draw(g);
         }
-
-
     }
 }
