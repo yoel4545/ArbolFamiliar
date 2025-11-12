@@ -85,53 +85,152 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
         {
             if (p == null) return;
             if (!adyacencia.ContainsKey(p)) return;
-            if (adyacencia.Count() <= 1) return;
 
-            // --- 1. Si tiene pareja, eliminar también a la pareja ---
-            if (p.partner != null)
+            // Helper para comprobar si tiene padres
+            bool HasParents(Person x) =>
+                x.Parents != null && x.Parents.Any(par => par != null);
+
+            // --- Caso 1: No tiene padres ni pareja → borrar p y descendencia ---
+            if (!HasParents(p) && p.Partner == null)
+            {
+                DeleteSubtree(p);
+                return;
+            }
+
+            // --- Caso 2: No tiene padres pero tiene pareja → borrar solo p ---
+            if (!HasParents(p) && p.Partner != null)
+            {
+                var pareja = p.Partner;
+                pareja.partner = null;
+                p.partner = null;
+
+                RemoveSingleNode(p);
+                return;
+            }
+
+            // --- Caso 3: Tiene padres y pareja → borrar pareja + descendencia ---
+            if (HasParents(p) && p.partner != null)
             {
                 var pareja = p.partner;
                 p.partner = null;
                 pareja.partner = null;
 
-                // Llamada recursiva para eliminar la pareja
-                DeletePerson(pareja);
+                DeleteSubtree(pareja);
+                return;
             }
 
-            // --- 2. Eliminar recursivamente todos los hijos ---
-            if (p.Children != null)
+            // --- Caso 4: Tiene padres y no tiene pareja → borrar solo p ---
+            if (HasParents(p) && p.Partner == null)
             {
-                // Hacemos una copia para evitar modificación durante la iteración
-                var hijos = new List<Person>(p.Children);
-                foreach (var hijo in hijos)
+                RemoveSingleNode(p);
+                return;
+            }
+        }
+
+        // Elimina todo el subárbol de "root" (ella y todos sus descendientes)
+        private void DeleteSubtree(Person root)
+        {
+            if (root == null) return;
+            if (!adyacencia.ContainsKey(root)) return;
+
+            // eliminar recursivamente los hijos
+            var hijos = new List<Person>(root.Children);
+            foreach (var h in hijos)
+            {
+                DeleteSubtree(h);
+            }
+
+            // quitar referencias en padres
+            if (root.Parents != null)
+            {
+                foreach (var padre in root.Parents)
                 {
-                    DeletePerson(hijo);
+                    if (padre != null)
+                    {
+                        padre.Children.Remove(root);
+                        if (adyacencia.ContainsKey(padre))
+                            adyacencia[padre].Remove(root);
+                    }
                 }
             }
 
-            // --- 3. Limpiar referencias de los padres ---
+            // desvincular pareja
+            if (root.Partner != null)
+            {
+                var pareja = root.Partner;
+                pareja.partner = null;
+                root.partner = null;
+            }
+
+            // eliminar nodo del grafo
+            adyacencia.Remove(root);
+
+            // limpiar referencias desde otros nodos
+            var keys = new List<Person>(adyacencia.Keys);
+            foreach (var key in keys)
+            {
+                if (adyacencia[key].Contains(root))
+                    adyacencia[key].Remove(root);
+                if (key.Children.Contains(root))
+                    key.Children.Remove(root);
+            }
+        }
+
+        // Elimina solo un nodo y rompe sus vínculos directos (sin tocar hijos)
+        private void RemoveSingleNode(Person p)
+        {
+            if (p == null) return;
+            if (!adyacencia.ContainsKey(p)) return;
+
+            // Quitar de los padres
             if (p.Parents != null)
             {
                 foreach (var padre in p.Parents)
                 {
                     if (padre != null)
                     {
-                        padre.RemoveChild(p);
+                        padre.Children.Remove(p);
+                        if (adyacencia.ContainsKey(padre))
+                            adyacencia[padre].Remove(p);
                     }
                 }
             }
 
-            // --- 4. Eliminar nodo del grafo ---
+            // Quitar relación de pareja
+            if (p.partner != null)
+            {
+                var pareja = p.partner;
+                if (pareja.partner == p) pareja.partner = null;
+                p.partner = null;
+            }
+
+            // Quitar referencias en hijos (sin borrar hijos)
+            if (p.Children != null)
+            {
+                foreach (var ch in p.Children)
+                {
+                    if (ch.Parents != null)
+                    {
+                        for (int i = 0; i < ch.Parents.Length; i++)
+                        {
+                            if (ch.Parents[i] == p)
+                                ch.Parents[i] = null;
+                        }
+                    }
+                }
+            }
+
+            // Eliminar del grafo
             adyacencia.Remove(p);
 
-            // --- 5. Limpiar referencias desde otros nodos ---
-            var claves = new List<Person>(adyacencia.Keys);
-            foreach (var key in claves)
+            // Limpiar referencias de otros nodos
+            var keys = new List<Person>(adyacencia.Keys);
+            foreach (var key in keys)
             {
                 if (adyacencia[key].Contains(p))
-                {
                     adyacencia[key].Remove(p);
-                }
+                if (key.Children.Contains(p))
+                    key.Children.Remove(p);
             }
         }
 
@@ -253,51 +352,59 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                     childSlots.Add(slot);
                 }
 
-                // calcular centros "efectivos" de cada hijo dentro del intervalo [left, ...]
-                var childCenters = new List<float>();
-                float childLeftCursor = left;
+                // --- PRIMER PASO (cambio importante) ---
+                // colocamos primero recursivamente cada hijo en su ranura (centrando su subárbol dentro de la ranura).
+                float cLeft = left;
                 for (int i = 0; i < children.Count; i++)
                 {
                     var ch = children[i];
                     float slot = childSlots[i];
-
-                    // si el hijo tiene pareja y slot==2*hGap, su "centro efectivo" para centrar al padre
-                    // es la primera ranura (childLeft + 0.5*hGap); si no, el centro es slot/2.
-                    if (ch.Partner != null && Math.Abs(slot - 2f * hGap) < 1e-6)
-                    {
-                        childCenters.Add(childLeftCursor + 0.5f * hGap);
-                    }
-                    else
-                    {
-                        // centro del sub-slot
-                        childCenters.Add(childLeftCursor + slot / 2f);
-                    }
-
-                    childLeftCursor += slot + hGap;
+                    float wch = widths.ContainsKey(ch) ? widths[ch] : hGap;
+                    // centramos el subárbol del hijo dentro de su ranura (si su ancho real < slot)
+                    float childInnerLeft = cLeft + (slot - wch) / 2f;
+                    PlaceSubtree(ch, childInnerLeft);
+                    cLeft += slot + hGap;
                 }
 
-                // Decide centro para el nodo según hijos existentes
+                // --- AHORA calculamos el centro real en base a las posiciones finales de los hijos ---
                 float centerForNode;
-                if (childCenters.Count == 0)
+                if (children.Count == 0)
                 {
                     centerForNode = left + nodeWidth / 2f;
                 }
-                else if (childCenters.Count == 1)
+                else if (children.Count == 1)
                 {
-                    // caso crítico: hijo único
-                    centerForNode = childCenters[0]; // si hijo tiene pareja, childCenters[0] ya apunta a la ranura correcta
+                    // hijo único: use la posición final del hijo como referencia (si hijo tiene pareja, tomar su x real)
+                    var unico = children[0];
+                    // si el hijo tiene partner, aseguramos usar la posición del hijo (no la del partner)
+                    centerForNode = unico.x;
                 }
                 else
                 {
-                    float minC = childCenters.Min();
-                    float maxC = childCenters.Max();
-                    centerForNode = (minC + maxC) / 2f;
+                    // varios hijos: usar extremos reales (finales) de los hijos
+                    float minX = float.MaxValue;
+                    float maxX = float.MinValue;
+                    foreach (var ch in children)
+                    {
+                        if (!placed.Contains(ch))
+                        {
+                            // por seguridad: si por alguna razón no fue colocado, usar su slot centro aproximado
+                            // (esto no debería ocurrir porque colocamos arriba recursivamente)
+                            continue;
+                        }
+                        minX = Math.Min(minX, ch.x);
+                        maxX = Math.Max(maxX, ch.x);
+                    }
+                    if (minX == float.MaxValue) // fallback
+                        centerForNode = left + nodeWidth / 2f;
+                    else
+                        centerForNode = (minX + maxX) / 2f;
                 }
 
-                // Colocar el nodo y su pareja (si la tiene)
+                // --- colocar el nodo y su pareja (si la tiene) en base al center calculado ---
                 if (node.Partner != null && !placed.Contains(node.Partner))
                 {
-                    // si es hoja (no hijos), colocamos hijo y pareja en las dos ranuras dentro del left asignado
+                    // si es hoja (no hijos), colocamos en las dos ranuras dentro del left asignado
                     if (children.Count == 0)
                     {
                         node.x = ConsistentRound(left + 0.5f * hGap);
@@ -311,7 +418,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                     }
                     else
                     {
-                        // pareja con hijos: repartir alrededor de centerForNode
+                        // pareja con hijos: repartir alrededor de centerForNode (pequeña separación coupleGap)
                         node.x = ConsistentRound(centerForNode - coupleGap / 2f);
                         node.y = ConsistentRound(y);
 
@@ -329,20 +436,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                     placed.Add(node);
                 }
 
-                // finalmente colocamos recursivamente a los hijos dentro de sus ranuras
-                float cLeft = left;
-                for (int i = 0; i < children.Count; i++)
-                {
-                    var ch = children[i];
-                    float slot = childSlots[i];
-                    float wch = widths.ContainsKey(ch) ? widths[ch] : hGap;
-
-                    // centramos el subárbol del hijo dentro de su ranura (si su ancho real < slot)
-                    float childInnerLeft = cLeft + (slot - wch) / 2f;
-                    PlaceSubtree(ch, childInnerLeft);
-
-                    cLeft += slot + hGap;
-                }
+                // (Los hijos ya fueron colocados arriba; no hace falta recolocarlos aquí)
             }
 
             // colocar cada raíz en orden
@@ -364,7 +458,6 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                 }
             }
         }
-
 
 
         public void DrawNodes(Graphics g)
