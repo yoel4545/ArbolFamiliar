@@ -179,6 +179,11 @@ namespace ArbolFamiliar
                 dragging = false;
         }
 
+        private void button1_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
         private void ArbolForm_MouseWheel(object sender, MouseEventArgs e)
         {
             float oldZoom = zoom;
