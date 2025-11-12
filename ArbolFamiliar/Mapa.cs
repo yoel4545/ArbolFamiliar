@@ -20,6 +20,8 @@ namespace ArbolFamiliar
         public Mapa()
         {
             InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
             InicializarMapa();
         }
 

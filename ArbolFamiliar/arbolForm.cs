@@ -33,6 +33,8 @@ namespace ArbolFamiliar
             this.MouseMove += ArbolForm_MouseMove;
             this.MouseUp += ArbolForm_MouseUp;
             this.MouseWheel += ArbolForm_MouseWheel;
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
 
             InitSidePanel();
         }

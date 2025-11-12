@@ -43,7 +43,7 @@
             // 
             // arbolForm
             // 
-            this.ClientSize = new System.Drawing.Size(930, 446);
+            this.ClientSize = new System.Drawing.Size(1192, 714);
             this.Controls.Add(this.button1);
             this.Name = "arbolForm";
             this.ResumeLayout(false);

@@ -17,6 +17,8 @@ namespace ArbolFamiliar
         public Form1()
         {
             InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
         }
 
         private void AbrirFormulario(Form nuevoForm)
