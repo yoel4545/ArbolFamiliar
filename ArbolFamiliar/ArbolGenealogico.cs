@@ -43,9 +43,14 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             if (!adyacencia.ContainsKey(child)) AddPerson(child);
             father.AddChild(child);
             adyacencia[father].Add(child);
+            if (father.partner != null)
+            {
+                father.partner.AddChild(child);
+                adyacencia[father.partner].Add(child);
+            }
             CalculatePositions();
         }
-        public void AddFather(Person child, Person father) //Agrega un padre a una persona ya existente
+        public void AddParent(Person child, Person father) //Agrega un padre a una persona ya existente
         {
             if (!adyacencia.ContainsKey(father)) AddPerson(father);
             if (!adyacencia.ContainsKey(child)) AddPerson(child);
@@ -64,11 +69,17 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
         {
             if (!adyacencia.ContainsKey(existingPatner)) AddPerson(existingPatner);
             if (!adyacencia.ContainsKey(newPatner)) AddPerson(newPatner);
-            existingPatner.AddPatner(newPatner);
-            newPatner.AddPatner(existingPatner);
-            newPatner.AddChildList(existingPatner);
+
+            // Verificación de disponibilidad antes de enlazar
+            if (!existingPatner.CanAddPartner(newPatner))
+            {
+                return;
+            }
+
+            existingPatner.AddPartner(newPatner);
             CalculatePositions();
         }
+
 
         public void DeletePerson(Person p) //Elimina una persona del grafo y conexiones con otras instancias de personas
         {
@@ -115,148 +126,156 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
 
         public void CalculatePositions()
         {
-            if (adyacencia == null || adyacencia.Count == 0) return;
+            if (adyacencia == null || adyacencia.Count == 0)
+            {
+                Person p = new Person("N/A", "0000", DateTime.Now, "");
+                AddPerson(p);
+            }
 
-            float hGap = horizontalSpacing;   // separación horizontal entre nodos
-            float vGap = verticalSpacing;     // separación vertical entre niveles
-            float coupleGap = Math.Max(hGap / 2f, 70f); // separación entre pareja
+            float hGap = horizontalSpacing;   // separación horizontal básica
+            float vGap = verticalSpacing;     // separación vertical
+            float coupleGap = Math.Max(hGap / 2f, 70f); // separación pareja dentro del bloque
 
-            // ---------------------------
-            // Agrupar por nivel y obtener min/max nivel
-            // ---------------------------
-            var byLevel = adyacencia.Keys
-                .GroupBy(p => p.GetLevel)
-                .ToDictionary(g => g.Key, g => g.ToList());
+            // 1) agrupar por nivel y calcular min/max
+            var byLevel = adyacencia.Keys.GroupBy(p => p.GetLevel)
+                             .ToDictionary(g => g.Key, g => g.ToList());
 
             if (byLevel.Count == 0) return;
 
             int minLevel = byLevel.Keys.Min();
             int maxLevel = byLevel.Keys.Max();
 
-            // Normalizar vertical: y = (level - minLevel) * vGap
             Func<int, int> CalcY = lvl => (int)Math.Round((lvl - minLevel) * vGap);
 
-            // ---------------------------
-            // 1) Colocar el nivel más bajo (maxLevel) de izquierda a derecha,
-            //    agrupando hermanos por un padre encontrado (si existe)
-            // ---------------------------
-            float nextX = 0f;
-            var placed = new HashSet<Person>();
-            var bottom = byLevel.ContainsKey(maxLevel) ? byLevel[maxLevel] : new List<Person>();
+            // 2) calcular ancho por subárbol (recursivo)
+            var widths = new Dictionary<Person, float>();
+            var visiting = new HashSet<Person>();
 
-            var handled = new HashSet<Person>();
-            var groups = new List<List<Person>>();
-
-            foreach (var child in bottom)
+            float ComputeWidth(Person node)
             {
-                if (handled.Contains(child)) continue;
-
-                // Buscar padres que tengan a 'child' en su Children (buscamos entre todas las personas del grafo)
-                var parentsOfChild = adyacencia.Keys.Where(parent => parent.Children != null && parent.Children.Contains(child)).ToList();
-
-                if (parentsOfChild.Count > 0)
+                if (widths.ContainsKey(node)) return widths[node];
+                if (visiting.Contains(node))
                 {
-                    // Tomamos el primer padre encontrado para agrupar hermanos por ese padre
-                    var parent = parentsOfChild[0];
-                    var siblings = bottom.Where(c => parent.Children != null && parent.Children.Contains(c)).ToList();
+                    // ciclo improbable, devolver 1 ranura
+                    widths[node] = hGap;
+                    return widths[node];
+                }
+                visiting.Add(node);
 
-                    foreach (var s in siblings) handled.Add(s);
-                    groups.Add(siblings);
+                // obtener hijos (supones que Children está sincronizada con adyacencia)
+                var children = node.Children ?? new List<Person>();
+
+                if (children.Count == 0)
+                {
+                    // hoja: si tiene pareja, reservamos 2 ranuras; si no, 1
+                    float leafWidth = (node.Partner != null) ? 2f * hGap : 1f * hGap;
+                    widths[node] = leafWidth;
+                    if (node.Partner != null && !widths.ContainsKey(node.Partner))
+                        widths[node.Partner] = leafWidth;
+                    visiting.Remove(node);
+                    return leafWidth;
+                }
+
+                // para nodo con hijos, sumar anchos de cada hijo
+                float total = 0f;
+                for (int i = 0; i < children.Count; i++)
+                {
+                    var ch = children[i];
+                    float wch = ComputeWidth(ch);
+                    total += wch;
+                }
+                // añadir gaps entre hijos
+                total += hGap * (children.Count - 1);
+
+                float nodeWidth = Math.Max(1f * hGap, total);
+                widths[node] = nodeWidth;
+                if (node.Partner != null && !widths.ContainsKey(node.Partner))
+                    widths[node.Partner] = nodeWidth;
+
+                visiting.Remove(node);
+                return nodeWidth;
+            }
+
+            // calcular para todas las raíces primero (por si hay varias)
+            var roots = GetRoots();
+            foreach (var r in roots) ComputeWidth(r);
+            // asegurar todos los nodos tengan width
+            foreach (var p in adyacencia.Keys) if (!widths.ContainsKey(p)) ComputeWidth(p);
+
+            // 3) colocar subárboles top-down usando los anchos calculados
+            var placed = new HashSet<Person>();
+            float cursorX = 0f;
+
+            void PlaceSubtree(Person node, float left)
+            {
+                if (placed.Contains(node)) return;
+                float nodeWidth = widths.ContainsKey(node) ? widths[node] : hGap;
+                float center = left + nodeWidth / 2f;
+                int lvl = node.GetLevel;
+                float y = CalcY(lvl);
+
+                if (node.Partner != null && !placed.Contains(node.Partner))
+                {
+                    // pareja: repartir alrededor del centro
+                    node.x = (int)Math.Round(center - coupleGap / 2f);
+                    node.y = (int)Math.Round(y);
+
+                    node.Partner.x = (int)Math.Round(center + coupleGap / 2f);
+                    node.Partner.y = (int)Math.Round(y);
+
+                    placed.Add(node);
+                    placed.Add(node.Partner);
+
+                    // colocar hijos en el intervalo [left, left + nodeWidth)
+                    var children = node.Children ?? new List<Person>();
+                    float childLeft = left;
+                    for (int i = 0; i < children.Count; i++)
+                    {
+                        var ch = children[i];
+                        float wch = widths.ContainsKey(ch) ? widths[ch] : hGap;
+                        PlaceSubtree(ch, childLeft);
+                        childLeft += wch + hGap;
+                    }
                 }
                 else
                 {
-                    // sin padre conocido -> grupo individual
-                    groups.Add(new List<Person> { child });
-                    handled.Add(child);
-                }
-            }
+                    // sin pareja
+                    node.x = (int)Math.Round(center);
+                    node.y = (int)Math.Round(y);
+                    placed.Add(node);
 
-            // asignar posiciones X por grupo
-            foreach (var grp in groups)
-            {
-                foreach (var ch in grp)
-                {
-                    ch.x = (int)Math.Round(nextX);
-                    ch.y = CalcY(maxLevel);
-                    placed.Add(ch);
-                    nextX += hGap;
-                }
-                // espacio extra entre familias
-                nextX += hGap * 0.5f;
-            }
-
-            // ---------------------------
-            // 2) Subir niveles uno por uno (desde maxLevel-1 hasta minLevel)
-            //    - Si un padre tiene hijos posicionados: centrar sobre ellos.
-            //    - Si no tiene hijos posicionados: colocarlo a la derecha (nextX).
-            //    - Si tiene pareja, colocar pareja centrada respecto al bloque de hijos (o al center).
-            // ---------------------------
-            for (int lvl = maxLevel - 1; lvl >= minLevel; lvl--)
-            {
-                if (!byLevel.ContainsKey(lvl)) continue;
-
-                var persons = byLevel[lvl];
-
-                foreach (var p in persons)
-                {
-                    var children = p.Children;
-
-                    // sólo tomar hijos que ya fueron posicionados
-                    var positionedChildren = (children ?? new List<Person>()).Where(c => placed.Contains(c)).ToList();
-
-                    if (positionedChildren.Count > 0)
+                    var children = node.Children ?? new List<Person>();
+                    float childLeft = left;
+                    for (int i = 0; i < children.Count; i++)
                     {
-                        float minX = positionedChildren.Min(c => c.x);
-                        float maxX = positionedChildren.Max(c => c.x);
-                        float center = (minX + maxX) / 2f;
-
-                        if (p.Patner != null)
-                        {
-                            // pareja centrada en center
-                            p.x = (int)Math.Round(center - coupleGap / 2f);
-                            p.y = CalcY(lvl);
-
-                            p.Patner.x = (int)Math.Round(center + coupleGap / 2f);
-                            p.Patner.y = CalcY(lvl);
-
-                            placed.Add(p);
-                            placed.Add(p.Patner);
-                        }
-                        else
-                        {
-                            // padre sin pareja, centrarlo
-                            p.x = (int)Math.Round(center);
-                            p.y = CalcY(lvl);
-                            placed.Add(p);
-                        }
-                    }
-                    else
-                    {
-                        // No tiene hijos posicionados (o no tiene hijos): ubicarlo en nextX
-                        if (!placed.Contains(p))
-                        {
-                            p.x = (int)Math.Round(nextX);
-                            p.y = CalcY(lvl);
-                            placed.Add(p);
-                            nextX += hGap;
-                        }
-
-                        // Si tiene pareja y no posicionada, colocarla al lado derecho
-                        if (p.Patner != null && !placed.Contains(p.Patner))
-                        {
-                            p.Patner.x = (int)Math.Round(p.x + coupleGap);
-                            p.Patner.y = CalcY(lvl);
-                            placed.Add(p.Patner);
-                            // avanzar nextX para reservar espacio
-                            nextX = Math.Max(nextX, p.Patner.x + hGap);
-                        }
+                        var ch = children[i];
+                        float wch = widths.ContainsKey(ch) ? widths[ch] : hGap;
+                        PlaceSubtree(ch, childLeft);
+                        childLeft += wch + hGap;
                     }
                 }
             }
 
-            // Nota: No hacemos la parte 5 (no forzamos ubicar nodos restantes).
-            // Asumimos que todos los nodos relevantes están en 'byLevel' y quedan posicionados.
+            // colocar cada raíz en orden
+            foreach (var r in roots)
+            {
+                float w = widths.ContainsKey(r) ? widths[r] : hGap;
+                PlaceSubtree(r, cursorX);
+                cursorX += w + hGap; // espacio entre familias
+            }
+
+            // por seguridad: si queda algún nodo sin colocar, ponerlos a la derecha
+            foreach (var p in adyacencia.Keys)
+            {
+                if (!placed.Contains(p))
+                {
+                    p.x = (int)Math.Round(cursorX);
+                    p.y = CalcY(p.GetLevel);
+                    cursorX += hGap;
+                }
+            }
         }
+
 
         public void DrawNodes(Graphics g)
         {
@@ -273,13 +292,13 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             {
                 var persona = kvp.Key;
 
-                if (persona.Patner != null)
+                if (persona.Partner != null)
                 {
                     // Línea entre los dos miembros de la pareja
                     float x1 = persona.x + radius;
                     float y1 = persona.y + radius;
-                    float x2 = persona.Patner.x + radius;
-                    float y2 = persona.Patner.y + radius;
+                    float x2 = persona.Partner.x + radius;
+                    float y2 = persona.Partner.y + radius;
 
                     g.DrawLine(linea, x1, y1, x2, y2);
                 }
@@ -297,9 +316,9 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                 // Punto de salida: si hay pareja, desde el centro entre ambos
                 float xOrigen, yOrigen;
 
-                if (padre.Patner != null)
+                if (padre.Partner != null)
                 {
-                    xOrigen = (padre.x + padre.Patner.x) / 2f + radius;
+                    xOrigen = (padre.x + padre.Partner.x) / 2f + radius;
                     yOrigen = padre.y + radius;
                 }
                 else

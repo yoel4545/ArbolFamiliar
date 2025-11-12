@@ -17,7 +17,7 @@ namespace ArbolFamiliar
         // Panel lateral y botones
         private Panel sidePanel;
         private Label infoLabel;
-        private Button btnAddChild, btnAddPartner, btnDelete, btnClose;
+        private Button btnAddChild, btnAddPatner, btnAddParent, btnDelete, btnClose;
 
         public arbolForm()
         {
@@ -88,7 +88,7 @@ namespace ArbolFamiliar
             // --- Botones inferiores ---
             int buttonWidth = sidePanel.Width - 40;
             int buttonHeight = 40;
-            int bottomY = sidePanel.Height - (buttonHeight + 10) * 3 - 20;
+            int bottomY = sidePanel.Height - (buttonHeight + 10) * 4 - 20;
 
             btnAddChild = new Button
             {
@@ -98,30 +98,40 @@ namespace ArbolFamiliar
                 BackColor = Color.LightBlue,
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left
             };
-            btnAddChild.Click += (s, e) => Debug.WriteLine("Agregar hijo");
             sidePanel.Controls.Add(btnAddChild);
 
-            btnAddPartner = new Button
+            btnAddParent = new Button
             {
-                Text = "Agregar Pareja",
+                Text = "Agregar Padre",
                 Size = new Size(buttonWidth, buttonHeight),
                 Location = new Point(20, bottomY + buttonHeight + 10),
                 BackColor = Color.LightBlue,
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left
             };
-            btnAddPartner.Click += (s, e) => Debug.WriteLine("Agregar pareja");
-            sidePanel.Controls.Add(btnAddPartner);
+            sidePanel.Controls.Add(btnAddParent);
+            btnAddPatner = new Button
+            {
+                Text = "Agregar Pareja",
+                Size = new Size(buttonWidth, buttonHeight),
+                Location = new Point(20, bottomY + (buttonHeight + 10) * 2),
+                BackColor = Color.LightBlue,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+            };
+            sidePanel.Controls.Add(btnAddPatner);
 
             btnDelete = new Button
             {
                 Text = "Eliminar",
                 Size = new Size(buttonWidth, buttonHeight),
-                Location = new Point(20, bottomY + (buttonHeight + 10) * 2),
+                Location = new Point(20, bottomY + (buttonHeight + 10) * 3),
                 BackColor = Color.LightCoral,
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left
             };
-            btnDelete.Click += (s, e) => Debug.WriteLine("Eliminar");
             sidePanel.Controls.Add(btnDelete);
+            btnAddChild.Click += BtnAddChild_Click;
+            btnAddParent.Click += BtnAddParent_Click;
+            btnAddPatner.Click += BtnAddPatner_Click;
+            btnDelete.Click += BtnDelete_Click;
 
             UpdateInfoPanel();
         }
@@ -129,15 +139,6 @@ namespace ArbolFamiliar
 
         private void ArbolForm_Load(object sender, EventArgs e)
         {
-            var fundador = new Person("Juan", "001", new DateTime(1950, 1, 1), "foto", 0, 0);
-            var hijo1 = new Person("Carlos", "002", new DateTime(1980, 3, 12), "foto", 0, 0);
-            var hija2 = new Person("Ana", "003", new DateTime(1982, 6, 5), "foto", 0, 0);
-            var pareja = new Person("Laura", "004", new DateTime(1955, 9, 10), "foto", 0, 0);
-
-            grafo.AddPerson(fundador);
-            grafo.AddChildren(fundador, hijo1);
-            grafo.AddChildren(fundador, hija2);
-            grafo.AddPatner(fundador, pareja);
 
             grafo.CalculatePositions();
             Invalidate();
@@ -176,11 +177,6 @@ namespace ArbolFamiliar
         {
             if (e.Button == MouseButtons.Left)
                 dragging = false;
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            this.Close();
         }
 
         private void ArbolForm_MouseWheel(object sender, MouseEventArgs e)
@@ -226,5 +222,91 @@ namespace ArbolFamiliar
                     $"Hijos: {selectedPerson.Children.Count}";
             }
         }
+
+        private Person MostrarFormularioNuevaPersona(string titulo)
+        {
+            using (var form = new PersonForm(titulo))
+            {
+                if (form.ShowDialog() == DialogResult.OK && form.Confirmado)
+                {
+                    return new Person(
+                        form.txtNombre.Text,
+                        form.txtId.Text,
+                        form.dateNacimiento.Value,
+                        form.FotoPath,
+                        0, 0
+                    );
+                }
+            }
+            return null;
+        }
+
+        private void BtnAddChild_Click(object sender, EventArgs e)
+        {
+            Debug.WriteLine("Pressed");
+            if (selectedPerson == null)
+            {
+                MessageBox.Show("Debe seleccionar una persona primero.");
+                return;
+            }
+
+            var nuevo = MostrarFormularioNuevaPersona("Agregar hijo");
+            if (nuevo != null)
+            {
+                grafo.AddChildren(selectedPerson, nuevo);
+                grafo.CalculatePositions();
+                Invalidate();
+            }
+        }
+        private void BtnAddParent_Click(object sender, EventArgs e)
+        {
+            if (selectedPerson == null)
+            {
+                MessageBox.Show("Debe seleccionar una persona primero.");
+                return;
+            }
+            var nuevoPadre = MostrarFormularioNuevaPersona("Agregar padre");
+            if (nuevoPadre != null)
+            {
+                grafo.AddParent(selectedPerson, nuevoPadre);
+                grafo.CalculatePositions();
+                Invalidate();
+            }
+        }
+
+        private void BtnAddPatner_Click(object sender, EventArgs e)
+        {
+            if (selectedPerson == null)
+            {
+                MessageBox.Show("Debe seleccionar una persona primero.");
+                return;
+            }
+
+            var nuevaPareja = MostrarFormularioNuevaPersona("Agregar pareja");
+            if (nuevaPareja != null)
+            {
+                grafo.AddPatner(selectedPerson, nuevaPareja);
+                grafo.CalculatePositions();
+                Invalidate();
+            }
+        }
+
+        private void BtnDelete_Click(object sender, EventArgs e)
+        {
+            if (selectedPerson == null)
+            {
+                MessageBox.Show("Debe seleccionar una persona primero.");
+                return;
+            }
+
+            if (MessageBox.Show($"¿Eliminar a {selectedPerson.GetName}?", "Confirmar", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                grafo.DeletePerson(selectedPerson);
+                selectedPerson = null;
+                grafo.CalculatePositions();
+                Invalidate();
+            }
+        }
+
     }
 }

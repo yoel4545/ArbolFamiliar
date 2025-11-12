@@ -16,81 +16,28 @@ namespace ArbolFamiliar
         {
             InitializeComponent();
         }
-        private Form formAbiertoActual = null;
-        private void AbrirFormulario(Form nuevoForm)
-        {
-            // Cerrar el form anterior si existe
-            if (formAbiertoActual != null && !formAbiertoActual.IsDisposed)
-            {
-                formAbiertoActual.Close();
-            }
-
-            // Configurar nuevo form
-            nuevoForm.WindowState = FormWindowState.Maximized;
-            nuevoForm.FormClosed += (s, args) => {
-                this.Show(); // Mostrar Form1 cuando se cierre el form hijo
-                formAbiertoActual = null;
-            };
-
-            this.Hide(); // Ocultar Form1
-            nuevoForm.Show();
-            formAbiertoActual = nuevoForm;
-        }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            this.WindowState = FormWindowState.Maximized;
+
         }
 
         private void pictureBox3_Click(object sender, EventArgs e)
         {
             Mapa nuevoFormulario = new Mapa();
             nuevoFormulario.Show();
-            AbrirFormulario(nuevoFormulario);
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)
         {
             arbolForm nuevoFormulario = new arbolForm();
             nuevoFormulario.Show();
-            AbrirFormulario(nuevoFormulario);
         }
 
         private void pictureBox2_Click(object sender, EventArgs e)
         {
             Ayuda nuevoFormulario = new Ayuda();
             nuevoFormulario.Show();
-            AbrirFormulario(nuevoFormulario);
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            DialogResult resultado = MessageBox.Show(
-                "¿Estás seguro que quieres salir de la aplicación?",
-                "Confirmar salida",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question
-            );
-
-            if (resultado == DialogResult.Yes)
-            {
-                Application.Exit();
-            }
-        }
-
-        private void button1_Click_1(object sender, EventArgs e)
-        {
-            DialogResult resultado = MessageBox.Show(
-                "¿Estás seguro que quieres salir de la aplicación?",
-                "Confirmar salida",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question
-            );
-
-            if (resultado == DialogResult.Yes)
-            {
-                Application.Exit();
-            }
         }
     }
 }
