@@ -83,6 +83,13 @@ namespace ArbolFamiliar
         {
             if (parents[0] == null || parents[1] == null)
             {
+                if (patner != null)
+                {
+                    if (patner.parents[1] != null && patner.parents[0] != null)
+                    {
+                        return false;
+                    }
+                }
                 return true;
             }
             else

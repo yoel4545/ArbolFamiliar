@@ -37,6 +37,7 @@ namespace ArbolFamiliar
             var padre = new Person("Pablo", "005", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
             var madre = new Person("Laura", "006", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
             var pareja = new Person("Jean", "006", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
+            var hermano = new Person("julio", "006", new DateTime(1940, 6, 5), "ejemplo", 0, 0);
 
             grafo.AddPerson(fundador);
             grafo.AddChildren(fundador, hijo1);
@@ -44,6 +45,7 @@ namespace ArbolFamiliar
             grafo.AddFather(fundador, padre);
             grafo.AddChildren(hijo1, madre);
             grafo.AddPatner(madre, pareja);
+            
 
             grafo.CalculatePositions();
             this.Invalidate();
@@ -98,6 +100,11 @@ namespace ArbolFamiliar
             panOffset.Y = (int)(e.Y - (e.Y - panOffset.Y) * (zoom / oldZoom));
 
             Invalidate();
+        }
+
+        private void arbolForm_Load_1(object sender, EventArgs e)
+        {
+
         }
     }
 }
