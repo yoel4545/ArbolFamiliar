@@ -13,34 +13,49 @@ namespace ArbolFamiliar
     {
         private GMapControl mapa;
         private List<Person> personas;
+        private Button btnEstadisticas;
+        private Button button1;
         private GrafoGeografico grafoGeo;
 
         public Mapa()
         {
             InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
             InicializarMapa();
         }
 
         private void InitializeComponent()
         {
+            this.btnEstadisticas = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
+            // 
+            // btnEstadisticas
+            // 
+            this.btnEstadisticas.Location = new System.Drawing.Point(10, 10);
+            this.btnEstadisticas.Name = "btnEstadisticas";
+            this.btnEstadisticas.Size = new System.Drawing.Size(150, 30);
+            this.btnEstadisticas.TabIndex = 0;
+            this.btnEstadisticas.Text = "Ver estadísticas";
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(13, 47);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(147, 26);
+            this.button1.TabIndex = 1;
+            this.button1.Text = "Regresar";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // Mapa
             // 
             this.ClientSize = new System.Drawing.Size(800, 600);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.btnEstadisticas);
             this.Name = "Mapa";
             this.Load += new System.EventHandler(this.Mapa_Load);
-
-
-
-            // Botón para ver estadísticas
-            var btnEstadisticas = new Button();
-            btnEstadisticas.Text = "Ver estadísticas";
-            btnEstadisticas.Size = new Size(150, 30);
-            btnEstadisticas.Location = new Point(10, 10);
-            btnEstadisticas.Click += BtnEstadisticas_Click;
-            this.Controls.Add(btnEstadisticas);
-
             this.ResumeLayout(false);
 
         }
@@ -198,6 +213,11 @@ namespace ArbolFamiliar
         private void Mapa_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
     }
 }
