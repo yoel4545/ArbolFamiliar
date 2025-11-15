@@ -22,11 +22,11 @@ namespace ArbolFamiliar
         public string cedula { get; set; }
 
 
-        public Person(string name, string id, DateTime birthdate, string photoPath, double lat, double lng, string cedula) //Metodo constructor con informacion basica, para un familiar vivo
+        public Person(string name, string id, DateTime birthdate, string photoPath, double lat, double lng) //Metodo constructor con informacion basica, para un familiar vivo
         {
             this.name = name;
             this.id = id;
-            this.cedula = cedula;
+            
             this.birthdate = birthdate;
             deathDate = null;
             this.fotoPath = photoPath;
