@@ -38,6 +38,8 @@ namespace ArbolFamiliar
             this.btnEstadisticas.Size = new System.Drawing.Size(150, 30);
             this.btnEstadisticas.TabIndex = 0;
             this.btnEstadisticas.Text = "Ver estadísticas";
+            this.btnEstadisticas.Click += new System.EventHandler(this.BtnEstadisticas_Click);
+
             // 
             // button1
             // 
