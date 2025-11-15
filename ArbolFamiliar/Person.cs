@@ -19,12 +19,14 @@ namespace ArbolFamiliar
         private int level { get; set; }
         public double Latitud { get; set; }
         public double Longitud { get; set; }
+        public string cedula { get; set; }
 
 
-        public Person(string name, string id, DateTime birthdate, string photoPath, double lat, double lng) //Metodo constructor con informacion basica, para un familiar vivo
+        public Person(string name, string id, DateTime birthdate, string photoPath, double lat, double lng, string cedula) //Metodo constructor con informacion basica, para un familiar vivo
         {
             this.name = name;
             this.id = id;
+            this.cedula = cedula;
             this.birthdate = birthdate;
             deathDate = null;
             this.fotoPath = photoPath;
@@ -32,6 +34,7 @@ namespace ArbolFamiliar
             parents = new Person[2]; //Maximo dos padres
             this.Latitud = lat;    // ← NUEVO
             this.Longitud = lng;
+            this.cedula = cedula;
         }
 
         public Person(string name, string id, DateTime birthdate, string photoPath)
