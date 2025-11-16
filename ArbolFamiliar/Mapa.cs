@@ -6,7 +6,6 @@ using System.Drawing;
 using System.Windows.Forms;
 using GMap.NET.WindowsForms.Markers;
 
-
 namespace ArbolFamiliar
 {
     public partial class Mapa : Form
@@ -16,6 +15,30 @@ namespace ArbolFamiliar
         private Button btnEstadisticas;
         private Button button1;
         private GrafoGeografico grafoGeo;
+        private GrafoGenealogico grafoGenealogico; 
+
+        public double LatitudSeleccionada { get; private set; }
+        public double LongitudSeleccionada { get; private set; }
+        public bool CoordenadasSeleccionadas { get; private set; }
+
+    
+        public Mapa(List<Person> personasDelArbol, GrafoGenealogico grafoGenealogico)
+        {
+            InitializeComponent();
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
+
+            
+            this.personas = personasDelArbol;
+            this.grafoGenealogico = grafoGenealogico;
+
+            if (personasDelArbol != null && personasDelArbol.Count > 0)
+            {
+                this.grafoGeo = new GrafoGeografico(personasDelArbol);
+            }
+
+            InicializarMapa();
+        }
 
         public Mapa()
         {
@@ -30,9 +53,8 @@ namespace ArbolFamiliar
             this.btnEstadisticas = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
-            // 
+
             // btnEstadisticas
-            // 
             this.btnEstadisticas.Location = new System.Drawing.Point(10, 10);
             this.btnEstadisticas.Name = "btnEstadisticas";
             this.btnEstadisticas.Size = new System.Drawing.Size(150, 30);
@@ -40,9 +62,7 @@ namespace ArbolFamiliar
             this.btnEstadisticas.Text = "Ver estadísticas";
             this.btnEstadisticas.Click += new System.EventHandler(this.BtnEstadisticas_Click);
 
-            // 
             // button1
-            // 
             this.button1.Location = new System.Drawing.Point(13, 47);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(147, 26);
@@ -50,22 +70,18 @@ namespace ArbolFamiliar
             this.button1.Text = "Regresar";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
+
             // Mapa
-            // 
             this.ClientSize = new System.Drawing.Size(800, 600);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.btnEstadisticas);
             this.Name = "Mapa";
             this.Load += new System.EventHandler(this.Mapa_Load);
             this.ResumeLayout(false);
-
         }
 
         private void BtnEstadisticas_Click(object sender, EventArgs e)
         {
-
-
             if (grafoGeo == null)
             {
                 MessageBox.Show("No hay datos geográficos disponibles.", "Estadísticas");
@@ -84,7 +100,6 @@ namespace ArbolFamiliar
             MessageBox.Show(mensaje, "Estadísticas del Mapa");
         }
 
-
         private void InicializarMapa()
         {
             // Crear mapa
@@ -94,16 +109,241 @@ namespace ArbolFamiliar
             mapa.MaxZoom = 18;
             mapa.Zoom = 10;
             mapa.MapProvider = GMap.NET.MapProviders.GoogleMapProvider.Instance;
-            mapa.Position = new PointLatLng(9.93, -84.08);
+            mapa.Position = new PointLatLng(9.93, -84.08); // Costa Rica por defecto
             mapa.CanDragMap = true;
             mapa.DragButton = MouseButtons.Left;
             GMaps.Instance.Mode = AccessMode.ServerOnly;
             mapa.ShowCenter = false;
             this.Controls.Add(mapa);
 
-            // Capa para los marcadores
-            var overlay = new GMapOverlay("marcadores");
+            // Mostrar personas si existen
+            if (personas != null && personas.Count > 0)
+            {
+                MostrarPersonasReales();
+            }
+            else
+            {
+                // Solo mostrar el mapa vacío, sin datos de prueba
+                var overlay = new GMapOverlay("marcadores");
+                mapa.Overlays.Add(overlay);
+            }
+        }
 
+       
+        private void MostrarPersonasReales()
+        {
+            
+            mapa.Overlays.Clear();
+
+            var overlayMarcadores = new GMapOverlay("marcadores");
+            var overlayRutas = new GMapOverlay("rutas");
+            var overlayTextos = new GMapOverlay("textos");
+
+            // Filtrar personas con coordenadas válidas
+            var personasConCoordenadas = new List<Person>();
+            foreach (var persona in personas)
+            {
+                if (persona.Latitud != 0 && persona.Longitud != 0)
+                {
+                    personasConCoordenadas.Add(persona);
+                }
+            }
+
+            if (personasConCoordenadas.Count == 0)
+            {
+                MessageBox.Show("Ninguna persona tiene coordenadas geográficas asignadas.", "Mapa Vacío");
+                return;
+            }
+
+            // Crear marcadores para cada persona con coordenadas
+            foreach (var persona in personasConCoordenadas)
+            {
+                var marcador = new MarcadorPersonalizado(persona);
+                overlayMarcadores.Markers.Add(marcador);
+            }
+
+            // Crear líneas solo entre personas relacionadas
+            foreach (var personaA in personasConCoordenadas)
+            {
+                foreach (var personaB in personasConCoordenadas)
+                {
+                    if (personaA != personaB && EstanRelacionadas(personaA, personaB))
+                    {
+                        if (grafoGeo.GetDistancias().TryGetValue(personaA, out var distanciasDesdeA) &&
+                            distanciasDesdeA.TryGetValue(personaB, out double distanciaKm))
+                        {
+                            // Dibujar línea
+                            var ruta = new GMapRoute(new List<PointLatLng>
+                            {
+                                new PointLatLng(personaA.Latitud, personaA.Longitud),
+                                new PointLatLng(personaB.Latitud, personaB.Longitud)
+                            }, "ruta");
+
+                            // Color diferente según el tipo de relación
+                            var color = ObtenerColorRelacion(personaA, personaB);
+                            ruta.Stroke = new Pen(color, 2);
+                            overlayRutas.Routes.Add(ruta);
+
+                            // Texto con distancia (solo para distancias significativas)
+                            if (distanciaKm > 1)
+                            {
+                                double latMedio = (personaA.Latitud + personaB.Latitud) / 2;
+                                double lonMedio = (personaA.Longitud + personaB.Longitud) / 2;
+                                var textoKm = new TextoEnMapa(new PointLatLng(latMedio, lonMedio), $"{distanciaKm:F1} km");
+                                overlayTextos.Markers.Add(textoKm);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Agregar todas las capas al mapa
+            mapa.Overlays.Add(overlayMarcadores);
+            mapa.Overlays.Add(overlayRutas);
+            mapa.Overlays.Add(overlayTextos);
+
+            // Centrar el mapa en las personas
+            CentrarMapaEnPersonas();
+
+            // Evento click en marcadores
+            mapa.OnMarkerClick += (marker, e) =>
+            {
+                if (marker is MarcadorPersonalizado marcadorPersonalizado)
+                {
+                    var persona = marcadorPersonalizado.persona;
+                    MostrarInformacionPersona(persona);
+                }
+            };
+        }
+        private void MostrarInformacionPersona(Person persona)
+        {
+            string mensaje = $"Información de la Persona:\n" +
+                             $"Nombre: {persona.GetName}\n" +
+                             $"Cédula: {persona.id}\n" +
+                             $"Coordenadas: {persona.Latitud:F4}, {persona.Longitud:F4}\n\n";
+
+            if (grafoGeo != null && grafoGeo.GetDistancias().ContainsKey(persona))
+            {
+                mensaje += $"Distancias a familiares:\n";
+                foreach (var kvp in grafoGeo.GetDistancias()[persona])
+                {
+                    if (EstanRelacionadas(persona, kvp.Key))
+                    {
+                        string tipoRelacion = ObtenerTipoRelacion(persona, kvp.Key);
+                        mensaje += $"- {kvp.Key.GetName} ({tipoRelacion}): {kvp.Value:F2} km\n";
+                    }
+                }
+            }
+            else
+            {
+                mensaje += "No se encontraron distancias geográficas.";
+            }
+
+            MessageBox.Show(mensaje, "Detalles del Familiar");
+        }
+
+   
+        private bool EstanRelacionadas(Person personaA, Person personaB)
+        {
+            if (grafoGenealogico != null)
+            {
+                // Verificar relaciones directas: padres, hijos, parejas
+                if (personaA.Partner == personaB || personaB.Partner == personaA)
+                    return true;
+
+                // Verificar si son padres/hijos
+                if ((personaA.Parents != null && (personaA.Parents[0] == personaB || personaA.Parents[1] == personaB)) ||
+                    (personaB.Parents != null && (personaB.Parents[0] == personaA || personaB.Parents[1] == personaA)))
+                    return true;
+
+                // Verificar si son hermanos
+                if (SonHermanos(personaA, personaB))
+                    return true;
+            }
+
+            return grafoGenealogico == null; 
+        }
+
+
+       
+        private bool SonHermanos(Person personaA, Person personaB)
+        {
+            if (personaA.Parents == null || personaB.Parents == null)
+                return false;
+
+            foreach (var padreA in personaA.Parents)
+            {
+                if (padreA != null)
+                {
+                    foreach (var padreB in personaB.Parents)
+                    {
+                        if (padreB != null && padreA == padreB)
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
+        private Color ObtenerColorRelacion(Person personaA, Person personaB)
+        {
+            if (personaA.Partner == personaB || personaB.Partner == personaA)
+                return Color.Red; // Pareja - Rojo
+
+            if ((personaA.Parents != null && Array.Exists(personaA.Parents, p => p == personaB)) ||
+                (personaB.Parents != null && Array.Exists(personaB.Parents, p => p == personaA)))
+                return Color.Blue; // Padre/Hijo - Azul
+
+            if (SonHermanos(personaA, personaB))
+                return Color.Green; // Hermanos - Verde
+
+            return Color.Gray; // Otro tipo de relación - Gris
+        }
+        private string ObtenerTipoRelacion(Person personaA, Person personaB)
+        {
+            if (personaA.Partner == personaB || personaB.Partner == personaA)
+                return "Pareja";
+
+            if (personaA.Parents != null && Array.Exists(personaA.Parents, p => p == personaB))
+                return "Padre/Madre";
+
+            if (personaB.Parents != null && Array.Exists(personaB.Parents, p => p == personaA))
+                return "Hijo/Hija";
+
+            if (SonHermanos(personaA, personaB))
+                return "Hermano/Hermana";
+
+            return "Familiar";
+        }
+        
+        private void CentrarMapaEnPersonas()
+        {
+            if (personas == null || personas.Count == 0) return;
+
+            double minLat = double.MaxValue, maxLat = double.MinValue;
+            double minLng = double.MaxValue, maxLng = double.MinValue;
+
+            foreach (var persona in personas)
+            {
+                if (persona.Latitud != 0 && persona.Longitud != 0)
+                {
+                    minLat = Math.Min(minLat, persona.Latitud);
+                    maxLat = Math.Max(maxLat, persona.Latitud);
+                    minLng = Math.Min(minLng, persona.Longitud);
+                    maxLng = Math.Max(maxLng, persona.Longitud);
+                }
+            }
+
+            if (minLat != double.MaxValue)
+            {
+                var centerLat = (minLat + maxLat) / 2;
+                var centerLng = (minLng + maxLng) / 2;
+                mapa.Position = new PointLatLng(centerLat, centerLng);
+            }
+        }
+
+       //esto era antes
+        private void MostrarDatosDePrueba()
+        {
             // RUTA CORREGIDA - sin comillas dobles
             string rutaFoto1 = @"C:\Users\Usuario\Desktop\Arroz\Fondos de pantalla\gon.png";
 
@@ -116,105 +356,13 @@ namespace ArbolFamiliar
             personas = new List<Person> { persona1, persona2, persona3, persona4 };
             grafoGeo = new GrafoGeografico(personas);
 
-
-            // Crear marcadores personalizados
-            var marcador1 = new MarcadorPersonalizado(persona1);
-            var marcador2 = new MarcadorPersonalizado(persona2);
-            var marcador3 = new MarcadorPersonalizado(persona3);
-            var marcador4 = new MarcadorPersonalizado(persona4);
-
-            // Agregar marcadores a la capa
-            overlay.Markers.Add(marcador1);
-            overlay.Markers.Add(marcador2);
-            overlay.Markers.Add(marcador3);
-            overlay.Markers.Add(marcador4);
-
-
-            var textosKm = new List<GMapMarker>();
-
-            // Crear líneas entre todos los pares
-            foreach (var origen in overlay.Markers)
-            {
-                foreach (var destino in overlay.Markers)
-                {
-                    if (origen != destino &&
-                        origen is MarcadorPersonalizado marcadorA &&
-                        destino is MarcadorPersonalizado marcadorB)
-                    {
-                        var personaA = marcadorA.persona;
-                        var personaB = marcadorB.persona;
-
-                        // Verifica que exista la distancia entre A y B
-                        if (grafoGeo.GetDistancias().TryGetValue(personaA, out var distanciasDesdeA) &&
-                            distanciasDesdeA.TryGetValue(personaB, out double distanciaKm))
-                        {
-                            // Dibujar línea
-                                    var ruta = new GMapRoute(new List<PointLatLng>
-                        {
-                            origen.Position,
-                            destino.Position
-                        }, "ruta");
-
-                            ruta.Stroke = new Pen(Color.DarkGray, 1);
-                            overlay.Routes.Add(ruta);
-
-                            // Calcular punto medio
-                            double latMedio = (origen.Position.Lat + destino.Position.Lat) / 2;
-                            double lonMedio = (origen.Position.Lng + destino.Position.Lng) / 2;
-                            var puntoMedio = new PointLatLng(latMedio, lonMedio);
-
-                            // Crear marcador de texto
-                            var textoKm = new TextoEnMapa(puntoMedio, $"{distanciaKm:F1} km");
-                            textosKm.Add(textoKm);
-
-                        }
-                    }
-                }
-            }
-
-            foreach (var texto in textosKm)
-            {
-                overlay.Markers.Add(texto);
-            }
-
-            // Agregar capa al mapa
-            mapa.Overlays.Add(overlay);
-
-            // Evento click en marcadores
-            mapa.OnMarkerClick += (marker, e) =>
-            {
-                if (marker is MarcadorPersonalizado marcadorPersonalizado)
-                {
-                    var persona = marcadorPersonalizado.persona;
-                    string mensaje = $"Información de la Persona:\n" +
-                                     $"Nombre: {persona.GetName}\n" +
-                                     $"Cédula: {persona.id}\n" +
-                                     $"Coordenadas: {persona.Latitud:F4}, {persona.Longitud:F4}\n\n";
-
-                    if (grafoGeo != null && grafoGeo.GetDistancias().ContainsKey(persona))
-                    {
-                        mensaje += $"Distancias desde {persona.GetName}:\n";
-                        foreach (var kvp in grafoGeo.GetDistancias()[persona])
-                        {
-                            mensaje += $"- {kvp.Key.GetName}: {kvp.Value:F2} km\n";
-                        }
-                    }
-                    else
-                    {
-                        mensaje += "No se encontraron distancias geográficas.";
-                    }
-
-                    MessageBox.Show(mensaje, "Detalles del Familiar");
-                }
-            };
-
+            // Para datos de prueba, no tenemos grafo genealógico, así que mostrar todas las conexiones
+            MostrarPersonasReales();
         }
 
-
-        
         private void Mapa_Load(object sender, EventArgs e)
         {
-
+            
         }
 
         private void button1_Click(object sender, EventArgs e)

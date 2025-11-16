@@ -8,7 +8,7 @@ using ArbolFamiliar;
 
 namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un hijo o padre, que sea coherente. Faltan los metodos para cordenadas.
 {
-    internal class GrafoGenealogico
+    public class GrafoGenealogico
     {
         private Dictionary<Person, List<Person>> adyacencia;
         private int horizontalSpacing;

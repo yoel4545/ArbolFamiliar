@@ -8,44 +8,51 @@ namespace ArbolFamiliar
     {
         public string name { get; set; }
         public string id { get; set; }
-        private DateTime birthdate { get; set; }
-        private DateTime? deathDate { get; set; }
+        public DateTime birthdate { get; set; }
+        public DateTime? deathDate { get; set; }
         public string fotoPath { get; set; }
         public List<Person> children { get; set; }
         public Person[] parents { get; set; }
         public float x { get; set; } //Coordenada x para graficar
         public float y { get; set; } //Coordenada y para graficar
         public Person partner { get; set; }
-        private int level { get; set; }
+        public int level { get; set; }
         public double Latitud { get; set; }
         public double Longitud { get; set; }
-        public string cedula { get; set; }
 
+        public int Edad
+        {
+            get
+            {
+                DateTime fechaReferencia = deathDate ?? DateTime.Now;
+                int edad = fechaReferencia.Year - birthdate.Year;
 
-        public Person(string name, string id, DateTime birthdate, string photoPath, double lat, double lng) //Metodo constructor con informacion basica, para un familiar vivo
+                if (birthdate.Date > fechaReferencia.AddYears(-edad))
+                    edad--;
+
+                return edad;
+            }
+        }
+
+        public Person(string name, string id, DateTime birthdate, string photoPath, double lat=0, double lng = 0, DateTime? deathDate = null) //Metodo constructor con informacion basica, para un familiar vivo
         {
             this.name = name;
             this.id = id;
             
             this.birthdate = birthdate;
-            deathDate = null;
+            this.deathDate = deathDate;
             this.fotoPath = photoPath;
             children = new List<Person>();
             parents = new Person[2]; //Maximo dos padres
-            this.Latitud = lat;    // ← NUEVO
+            this.Latitud = lat;    
             this.Longitud = lng;
-            this.cedula = cedula;
+            this.level = 0;
+
         }
 
         public Person(string name, string id, DateTime birthdate, string photoPath)
+            : this(name, id, birthdate, photoPath, 0, 0, null)
         {
-            this.name = name;
-            this.id = id;
-            this.birthdate = birthdate;
-            deathDate = null;
-            this.fotoPath = photoPath;
-            children = new List<Person>();
-            parents = new Person[2];
         }
 
         public void SetLevel(int newLevel)
@@ -57,7 +64,7 @@ namespace ArbolFamiliar
         {
             if (children == null)
             {
-                return;
+                children = new List<Person>();
             }
             if (child != null && !children.Contains(child))
             {
@@ -82,88 +89,103 @@ namespace ArbolFamiliar
 
         public void AddPartner(Person newPartner)
         {
-            if (!CanAddPartner(newPartner)) return; // protección
+            
+            if (!CanAddPartner(newPartner)) return;
 
             partner = newPartner;
             newPartner.partner = this;
 
-            newPartner.SetLevel(level);
-            newPartner.children = this.children; // comparten lista de hijos
+            
+            // Asegurar que ambas tengan listas inicializadas
+            if (newPartner.children == null)
+                newPartner.children = new List<Person>();
+
+            // Copiar hijos de this a newPartner (sin duplicados)
+            foreach (var hijo in this.children)
+            {
+                if (!newPartner.children.Contains(hijo))
+                {
+                    newPartner.children.Add(hijo);
+                }
+            }
+
+            // Copiar hijos de newPartner a this (sin duplicados)
+            foreach (var hijo in newPartner.children)
+            {
+                if (!this.children.Contains(hijo))
+                {
+                    this.children.Add(hijo);
+                }
+            }
+
+            // Mantener niveles coherentes
+            newPartner.level = this.level;
         }
 
-        public void AddChildList(Person existingPartner)
-        {
-            children = existingPartner.Children;
-        }
+
+
 
         public bool CanAddParent()
         {
-            if (parents[0] != null && parents[1] != null) return false;
-
-            // Si tengo pareja y la pareja ya tiene algún padre -> no permitir
-            if (partner != null)
-            {
-                if ((partner.parents[0] != null) || (partner.parents[1] != null))
-                    return false;
-            }
-
-            return true;
+            // Solo evitar agregar más de dos padres
+            return !(parents[0] != null && parents[1] != null);
         }
 
         public void AddParent(Person parent)
         {
             if (parent == null) return;
-            if (!CanAddParent()) return;
 
-            // asignar en el primer slot libre
-            if (parents[0] == null)
-            {
-                parents[0] = parent;
-            }
-            else if (parents[1] == null)
-            {
-                parents[1] = parent;
-            }
-
-            if (!parent.children.Contains(this))
-            {
-                parent.children.Add(this);
-            }
-
-            // Si el padre ya tiene pareja, ese partner también debe tener este hijo
-            if (parent.partner != null)
-            {
-                if (parent.partner.children == null) parent.partner.children = parent.children;
-                else if (!parent.partner.children.Contains(this))
-                {
-                    parent.partner.children.Add(this);
-                }
-            }
-
-            // Si ahora tengo ambos padres, asegurar que los padres sean pareja entre sí
+            // Si ya tiene 2 padres → no agregar más
             if (parents[0] != null && parents[1] != null)
-            {
-                // establecer pareja mutua entre los padres
-                if (parents[0].partner != parents[1])
-                {
-                    parents[0].AddPartner(parents[1]);
-                }
+                return;
 
-                if (parents[1].partner != parents[0])
+            // Añadir padre en el espacio vacío
+            if (parents[0] == null)
+                parents[0] = parent;
+            else if (parents[1] == null)
+                parents[1] = parent;
+
+            // Asegurar que el padre tenga lista de hijos
+            if (parent.children == null)
+                parent.children = new List<Person>();
+
+            // Agregar hijo al padre
+            if (!parent.children.Contains(this))
+                parent.children.Add(this);
+
+            // Si el padre tiene pareja, esa pareja también es padre
+            if (parent.partner != null)
+            {
+                var otro = parent.partner;
+
+                // agregar hijo al partner
+                if (!otro.children.Contains(this))
+                    otro.children.Add(this);
+
+                // agregar como padre si hay espacio y no está ya
+                if (parents[0] != otro && parents[1] != otro)
                 {
-                    parents[1].AddPartner(parents[0]);
+                    if (parents[0] == null) parents[0] = otro;
+                    else if (parents[1] == null) parents[1] = otro;
                 }
-                    
             }
 
-            parent.SetLevel(this.level - 1);
+            // Si ya hay ambos padres, asegurarse que sean pareja
+            if (parents[0] != null && parents[1] != null && parents[0].partner != parents[1])
+            {
+                parents[0].AddPartner(parents[1]); 
+            }
+
+            // Ajustar niveles
+            parent.level = Math.Max(0, this.level - 1);
             if (parent.partner != null)
-                parent.partner.SetLevel(parent.GetLevel); // pareja al mismo nivel
+                parent.partner.level = parent.level;
         }
+
 
         public void RemoveChild(Person child) //Elimina un hijo de la lista de hijos propia
         {
-            if (child != null) return;
+            if (child == null) return;
             if (children.Contains(child))
             {
                 children.Remove(child);
@@ -181,6 +203,16 @@ namespace ArbolFamiliar
             {
                 parents[1] = null;
             }
+        }
+        public bool FechasValidas()
+        {
+            if (birthdate > DateTime.Now)
+                return false;
+
+            if (deathDate.HasValue && deathDate.Value <= birthdate)
+                return false;
+
+            return true;
         }
 
         public Person[] Parents => parents;

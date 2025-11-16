@@ -10,7 +10,7 @@ namespace ArbolFamiliar
         private Point panOffset = new Point(0, 0);
         private Point lastMouse;
         private bool dragging = false;
-        private GrafoGenealogico grafo;
+        public static GrafoGenealogico grafo;
         private float zoom = 1.0f;
         private Person selectedPerson = null;
 
@@ -25,7 +25,11 @@ namespace ArbolFamiliar
             this.DoubleBuffered = true;
             this.BackColor = Color.White;
 
-            grafo = new GrafoGenealogico();
+            if (grafo == null)
+            {
+                grafo = new GrafoGenealogico();
+            }
+
 
             this.Load += ArbolForm_Load;
             this.Paint += ArbolForm_Paint;
@@ -236,7 +240,9 @@ namespace ArbolFamiliar
                         form.txtId.Text,
                         form.dateNacimiento.Value,
                         form.FotoPath,
-                        0, 0
+                        form.GetLatitud(),
+                        form.GetLongitud(),
+                        form.GetFechaFallecimiento()
                     );
                 }
             }

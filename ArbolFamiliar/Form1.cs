@@ -48,7 +48,14 @@ namespace ArbolFamiliar
 
         private void pictureBox3_Click(object sender, EventArgs e)
         {
-            Mapa nuevoFormulario = new Mapa();
+            if (arbolForm.grafo == null || !arbolForm.grafo.GetAllPersons().Any())
+            {
+                MessageBox.Show("No hay personas en el árbol.");
+                return;
+            }
+
+            var personas = new List<Person>(arbolForm.grafo.GetAllPersons());
+            Mapa nuevoFormulario = new Mapa(personas, arbolForm.grafo);
             AbrirFormulario(nuevoFormulario);
         }
 
