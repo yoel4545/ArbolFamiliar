@@ -111,7 +111,7 @@ namespace ArbolFamiliar
             {
                 Location = new Point(120, y),
                 Width = 200,
-                Text = "9.9347"
+                Text = "9"
                 
             };
             y += 35;
@@ -121,7 +121,7 @@ namespace ArbolFamiliar
             {
                 Location = new Point(120, y),
                 Width = 200,
-                Text = "-84.0875"
+                Text = "-84"
                
             };
             y += 50;

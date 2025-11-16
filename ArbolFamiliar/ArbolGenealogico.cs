@@ -17,8 +17,8 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
         public GrafoGenealogico()
         {
             adyacencia = new Dictionary<Person, List<Person>>();
-            horizontalSpacing = 75;
-            verticalSpacing = 125;
+            horizontalSpacing = 200;
+            verticalSpacing = 175;
             radius = 30;
         }
         public IEnumerable<Person> GetAllPersons()
@@ -307,7 +307,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
 
             float hGap = horizontalSpacing;   // separación horizontal básica (unidad)
             float vGap = verticalSpacing;     // separación vertical
-            float coupleGap = Math.Max(hGap / 2f, 70f); // separación pareja dentro del bloque
+            float coupleGap = Math.Max(hGap * 1.5f, 120f); // separación pareja dentro del bloque
 
             // 1) agrupar por nivel y calcular min/max
             var byLevel = adyacencia.Keys.GroupBy(p => p.GetLevel)
@@ -338,13 +338,25 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
 
                 if (children.Count == 0)
                 {
-                    // hoja: reservar 2 ranuras si tiene pareja, si no 1 ranura
-                    float leafWidth = (node.Partner != null) ? 2f * hGap : 1f * hGap;
-                    widths[node] = leafWidth;
+                    // ✅ MEJORADO: Más espacio si tiene pareja Y padres
+                    bool tienePadres = (node.Parents != null && (node.Parents[0] != null || node.Parents[1] != null));
+                    bool parejaTienePadres = (node.Partner != null && node.Partner.Parents != null &&
+                                             (node.Partner.Parents[0] != null || node.Partner.Parents[1] != null));
+
+                    float baseWidth = (node.Partner != null) ? 2f * hGap : 1f * hGap;
+
+                    
+                    if (tienePadres || parejaTienePadres)
+                    {
+                        baseWidth *= 1.8f; // 80% más de espacio
+                    }
+
+                    widths[node] = baseWidth;
                     if (node.Partner != null && !widths.ContainsKey(node.Partner))
-                        widths[node.Partner] = leafWidth;
+                        widths[node.Partner] = baseWidth;
+
                     visiting.Remove(node);
-                    return leafWidth;
+                    return baseWidth;
                 }
 
                 // Sumar "slot" de cada hijo (slot = max(widthHijo, (pareja?2:1)*hGap))
@@ -448,30 +460,41 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                 // --- colocar el nodo y su pareja (si la tiene) en base al center calculado ---
                 if (node.Partner != null && !placed.Contains(node.Partner))
                 {
-                    // si es hoja (no hijos), colocamos en las dos ranuras dentro del left asignado
+              
+                    bool nodeTienePadres = (node.Parents != null && (node.Parents[0] != null || node.Parents[1] != null));
+                    bool partnerTienePadres = (node.Partner.Parents != null && (node.Partner.Parents[0] != null || node.Partner.Parents[1] != null));
+
+                    float separacionBase = coupleGap;
+
+                 
+                    if (nodeTienePadres && partnerTienePadres)
+                    {
+                        separacionBase *= 2.5f; // Ambos tienen padres - máximo espacio
+                    }
+                    else if (nodeTienePadres || partnerTienePadres)
+                    {
+                        separacionBase *= 1.8f; // Solo uno tiene padres - espacio moderado
+                    }
+
                     if (children.Count == 0)
                     {
-                        node.x = ConsistentRound(left + 0.5f * hGap);
-                        node.y = ConsistentRound(y);
-                        node.Partner.x = ConsistentRound(left + 1.5f * hGap);
-                        node.Partner.y = ConsistentRound(y);
-
-                        placed.Add(node);
-                        placed.Add(node.Partner);
-                        return;
+                        // Pareja sin hijos - posicionar con espacio adecuado
+                        float espacioTotal = separacionBase + hGap;
+                        node.x = ConsistentRound(left + (espacioTotal - separacionBase) / 2f);
+                        node.Partner.x = ConsistentRound(node.x + separacionBase);
                     }
                     else
                     {
-                        // pareja con hijos: repartir alrededor de centerForNode (pequeña separación coupleGap)
-                        node.x = ConsistentRound(centerForNode - coupleGap / 2f);
-                        node.y = ConsistentRound(y);
-
-                        node.Partner.x = ConsistentRound(centerForNode + coupleGap / 2f);
-                        node.Partner.y = ConsistentRound(y);
-
-                        placed.Add(node);
-                        placed.Add(node.Partner);
+                        // Pareja con hijos - posicionar respetando el centro
+                        node.x = ConsistentRound(centerForNode - separacionBase / 2f);
+                        node.Partner.x = ConsistentRound(centerForNode + separacionBase / 2f);
                     }
+
+                    node.y = ConsistentRound(y);
+                    node.Partner.y = ConsistentRound(y);
+
+                    placed.Add(node);
+                    placed.Add(node.Partner);
                 }
                 else
                 {
