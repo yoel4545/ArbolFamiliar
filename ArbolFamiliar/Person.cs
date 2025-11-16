@@ -148,17 +148,21 @@ namespace ArbolFamiliar
         }
 
 
-
-
         public bool CanAddParent()
         {
-            // Solo evitar agregar más de dos padres
+            if (partner != null)
+            {
+                if (partner.parents[1] != null || partner.parents[0] != null)
+                {
+                    return false;
+                }
+            }
             return !(parents[0] != null && parents[1] != null);
         }
 
         public void AddParent(Person parent)
         {
-            if (parent == null) return;
+            if (parent == null && CanAddParent()) return;
 
             // Si ya tiene 2 padres → no agregar más
             if (parents[0] != null && parents[1] != null)

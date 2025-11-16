@@ -72,17 +72,21 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
         }
         public void AddParent(Person child, Person father) //Agrega un padre a una persona ya existente
         {
-            if (!adyacencia.ContainsKey(father)) AddPerson(father);
-            if (!adyacencia.ContainsKey(child)) AddPerson(child);
             if (child == null || father == null)
                 return;
+            if (!adyacencia.ContainsKey(father)) AddPerson(father);
+            if (!adyacencia.ContainsKey(child)) AddPerson(child);
             if (child.CanAddParent())
             {
                 child.AddParent(father);
                 father.AddChild(child);
                 adyacencia[father].Add(child);
             }
-            CalculatePositions();
+            else
+            {
+                adyacencia.Remove(father);
+            }
+                CalculatePositions();
         }
 
         public void AddPatner(Person existingPatner, Person newPatner)
@@ -93,6 +97,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             // Verificación de disponibilidad antes de enlazar
             if (!existingPatner.CanAddPartner(newPatner))
             {
+                adyacencia.Remove(newPatner);
                 return;
             }
 
