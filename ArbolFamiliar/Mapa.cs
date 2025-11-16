@@ -1,10 +1,11 @@
 ﻿using GMap.NET;
 using GMap.NET.WindowsForms;
+using GMap.NET.WindowsForms.Markers;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
-using GMap.NET.WindowsForms.Markers;
 
 namespace ArbolFamiliar
 {
@@ -242,45 +243,47 @@ namespace ArbolFamiliar
             MessageBox.Show(mensaje, "Detalles del Familiar");
         }
 
-   
+
         private bool EstanRelacionadas(Person personaA, Person personaB)
         {
-            if (grafoGenealogico != null)
-            {
-                // Verificar relaciones directas: padres, hijos, parejas
-                if (personaA.Partner == personaB || personaB.Partner == personaA)
-                    return true;
+            if (grafoGenealogico == null)
+                return false;
 
-                // Verificar si son padres/hijos
-                if ((personaA.Parents != null && (personaA.Parents[0] == personaB || personaA.Parents[1] == personaB)) ||
-                    (personaB.Parents != null && (personaB.Parents[0] == personaA || personaB.Parents[1] == personaA)))
-                    return true;
+            // 1. Son la misma persona
+            if (personaA == personaB)
+                return false;
 
-                // Verificar si son hermanos
-                if (SonHermanos(personaA, personaB))
-                    return true;
-            }
+            // 2. Son pareja
+            if (personaA.Partner == personaB || personaB.Partner == personaA)
+                return true;
 
-            return grafoGenealogico == null; 
+            // 3. Relación padre-hijo (verificando AMBOS lados de forma más robusta)
+            bool aEsPadreDeB = personaB.Parents != null &&
+                               personaB.Parents.Contains(personaA);
+            bool bEsPadreDeA = personaA.Parents != null &&
+                               personaA.Parents.Contains(personaB);
+
+            if (aEsPadreDeB || bEsPadreDeA)
+                return true;
+
+            // 4. Son hermanos (comparten al menos un padre)
+            if (SonHermanos(personaA, personaB))
+                return true;
+
+            return false;
         }
 
-
-       
+        
         private bool SonHermanos(Person personaA, Person personaB)
         {
             if (personaA.Parents == null || personaB.Parents == null)
                 return false;
 
+            // Verificar si comparten al menos un padre
             foreach (var padreA in personaA.Parents)
             {
-                if (padreA != null)
-                {
-                    foreach (var padreB in personaB.Parents)
-                    {
-                        if (padreB != null && padreA == padreB)
-                            return true;
-                    }
-                }
+                if (padreA != null && personaB.Parents.Contains(padreA))
+                    return true;
             }
             return false;
         }
@@ -344,7 +347,7 @@ namespace ArbolFamiliar
        //esto era antes
         private void MostrarDatosDePrueba()
         {
-            // RUTA CORREGIDA - sin comillas dobles
+         
             string rutaFoto1 = @"C:\Users\Usuario\Desktop\Arroz\Fondos de pantalla\gon.png";
 
             // Crear personas de prueba

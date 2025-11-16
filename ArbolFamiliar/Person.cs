@@ -60,7 +60,7 @@ namespace ArbolFamiliar
             level = newLevel;
         }
 
-        public void AddChild(Person child) //Anade un hijo a la lista de hijos propia
+        public void AddChild(Person child) //Añade un hijo a la lista de hijos propia
         {
             if (children == null)
             {
@@ -69,10 +69,35 @@ namespace ArbolFamiliar
             if (child != null && !children.Contains(child))
             {
                 children.Add(child);
-                child.SetLevel(level + 1);
+
+                // ✅ ACTUALIZADO: Actualizar nivel del hijo y propagar a sus descendientes
+                ActualizarNivelYPropagar(child, this.level + 1);
+
+                // ✅ Si tengo pareja, también agregar el hijo a la pareja
+                if (partner != null && !partner.children.Contains(child))
+                {
+                    partner.children.Add(child);
+                }
             }
         }
+        private void ActualizarNivelYPropagar(Person persona, int nuevoNivel)
+        {
+            if (persona.level == nuevoNivel) return;
 
+            persona.level = nuevoNivel;
+
+            // Propagar a todos los hijos
+            foreach (var hijo in persona.children)
+            {
+                ActualizarNivelYPropagar(hijo, nuevoNivel + 1);
+            }
+
+            // ✅ ACTUALIZAR también a la pareja para mantener consistencia
+            if (persona.partner != null && persona.partner.level != nuevoNivel)
+            {
+                persona.partner.level = nuevoNivel;
+            }
+        }
         public bool CanAddPartner(Person newPartner)
         {
             // No puede tener ya pareja
@@ -151,7 +176,11 @@ namespace ArbolFamiliar
 
             // Agregar hijo al padre
             if (!parent.children.Contains(this))
+            {
                 parent.children.Add(this);
+                // ✅ ACTUALIZADO: Usar el nuevo método para propagar niveles
+                parent.ActualizarNivelYPropagar(this, parent.level + 1);
+            }
 
             // Si el padre tiene pareja, esa pareja también es padre
             if (parent.partner != null)
@@ -160,7 +189,11 @@ namespace ArbolFamiliar
 
                 // agregar hijo al partner
                 if (!otro.children.Contains(this))
+                {
                     otro.children.Add(this);
+                    // ✅ ACTUALIZADO: Usar el nuevo método para propagar niveles
+                    otro.ActualizarNivelYPropagar(this, otro.level + 1);
+                }
 
                 // agregar como padre si hay espacio y no está ya
                 if (parents[0] != otro && parents[1] != otro)
@@ -173,13 +206,8 @@ namespace ArbolFamiliar
             // Si ya hay ambos padres, asegurarse que sean pareja
             if (parents[0] != null && parents[1] != null && parents[0].partner != parents[1])
             {
-                parents[0].AddPartner(parents[1]); 
+                parents[0].AddPartner(parents[1]);
             }
-
-            // Ajustar niveles
-            parent.level = Math.Max(0, this.level - 1);
-            if (parent.partner != null)
-                parent.partner.level = parent.level;
         }
 
 

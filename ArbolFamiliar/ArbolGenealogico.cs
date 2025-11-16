@@ -37,17 +37,37 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             CalculatePositions();
         }
 
-        public void AddChildren(Person father, Person child) //Agrega un hijo a un padre, crea las dos personas si no existen
+        public void AddChildren(Person father, Person child) 
         {
             if (!adyacencia.ContainsKey(father)) AddPerson(father);
             if (!adyacencia.ContainsKey(child)) AddPerson(child);
+
+         
             father.AddChild(child);
+
+          
+            if (child.CanAddParent())
+            {
+                child.AddParent(father);
+            }
+
+            
             adyacencia[father].Add(child);
+
+         
             if (father.partner != null)
             {
                 father.partner.AddChild(child);
+
+               
+                if (child.CanAddParent())
+                {
+                    child.AddParent(father.partner);
+                }
+
                 adyacencia[father.partner].Add(child);
             }
+
             CalculatePositions();
         }
         public void AddParent(Person child, Person father) //Agrega un padre a una persona ya existente
