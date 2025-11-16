@@ -104,203 +104,166 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             existingPatner.AddPartner(newPatner);
             CalculatePositions();
         }
+        private static bool HasParents(Person x) =>
+    x?.Parents != null && x.Parents.Any(p => p != null);
 
-        public void DeletePerson(Person p)
+        // Recolecta componente: nodo, sus hijos recursivos y parejas (y sus descendientes)
+        private HashSet<Person> CollectComponent(Person root)
         {
-            if (p == null) return;
-            if (!adyacencia.ContainsKey(p)) return;
+            var toDelete = new HashSet<Person>();
+            if (root == null) return toDelete;
 
-            bool HasParents(Person x) =>
-                x.Parents != null && x.Parents.Any(par => par != null);
+            var stack = new Stack<Person>();
+            stack.Push(root);
 
-            // --- Caso 1: No tiene padres ni pareja → borrar p y descendencia ---
-            if (!HasParents(p) && p.Partner == null)
+            while (stack.Count > 0)
             {
-                DeleteSubtree(p);
+                var n = stack.Pop();
+                if (n == null || !toDelete.Add(n)) continue;
 
-                // reconstruir y recalcular
-                RebuildAdjacency();
-                CalculatePositions();
-                return;
+                if (n.Children != null)
+                    foreach (var ch in n.Children) if (ch != null) stack.Push(ch);
+
+                if (n.Partner != null) stack.Push(n.Partner);
             }
-
-            // --- Caso 2: No tiene padres pero tiene pareja → borrar solo p, hijos pasan a la pareja ---
-            if (!HasParents(p) && p.Partner != null)
-            {
-                var pareja = p.Partner;
-
-                // Asegurar que la pareja esté registrada en adyacencia
-                if (!adyacencia.ContainsKey(pareja)) AddPerson(pareja);
-
-                // Mover hijos a la pareja (y actualizar Parents)
-                var hijos = new List<Person>(p.Children);
-                foreach (var h in hijos)
-                {
-                    // Reemplazar referencias de padres en el hijo: p -> pareja
-                    if (h.Parents != null)
-                    {
-                        for (int i = 0; i < h.Parents.Length; i++)
-                        {
-                            if (h.Parents[i] == p)
-                                h.Parents[i] = pareja;
-                        }
-                    }
-
-                    // Agregar hijo a la pareja si aún no lo tiene
-                    if (!pareja.Children.Contains(h))
-                    {
-                        pareja.AddChild(h);
-                    }
-
-                    // Asegurar que adyacencia tenga la relación pareja -> hijo
-                    if (!adyacencia.ContainsKey(pareja)) adyacencia[pareja] = new List<Person>();
-                    if (!adyacencia[pareja].Contains(h))
-                        adyacencia[pareja].Add(h);
-                }
-
-                // Romper relación de pareja y eliminar sólo p
-                pareja.partner = null;
-                p.partner = null;
-
-                RemoveSingleNode(p);
-
-                // reconstruir y recalcular
-                RebuildAdjacency();
-                CalculatePositions();
-                return;
-            }
-
-            // --- Caso 3: Tiene padres y pareja → borrar pareja + descendencia ---
-            if (HasParents(p) && p.partner != null)
-            {
-                var pareja = p.partner;
-                p.partner = null;
-                pareja.partner = null;
-
-                DeleteSubtree(pareja);
-
-                RebuildAdjacency();
-                CalculatePositions();
-                return;
-            }
-
-            // --- Caso 4: Tiene padres y no tiene pareja → borrar solo p ---
-            if (HasParents(p) && p.Partner == null)
-            {
-                RemoveSingleNode(p);
-
-                RebuildAdjacency();
-                CalculatePositions();
-                return;
-            }
+            return toDelete;
         }
 
-
-        // Elimina todo el subárbol de "root" (ella y todos sus descendientes)
-        private void DeleteSubtree(Person root)
+        // Borra completamente todos los nodos del componente (limpia parents/children/partner/adyacencia)
+        private void DeleteComponent(Person root)
         {
-            if (root == null) return;
-            if (!adyacencia.ContainsKey(root)) return;
+            var toDelete = CollectComponent(root);
+            if (toDelete.Count == 0) return;
 
-            // eliminar recursivamente los hijos
-            var hijos = new List<Person>(root.Children);
-            foreach (var h in hijos)
+            // 1) Quitar referencias desde padres externos y limpiar Parents
+            foreach (var node in toDelete)
             {
-                DeleteSubtree(h);
-            }
-
-            // quitar referencias en padres
-            if (root.Parents != null)
-            {
-                foreach (var padre in root.Parents)
+                if (node.Parents == null) continue;
+                for (int i = 0; i < node.Parents.Length; i++)
                 {
-                    if (padre != null)
+                    var padre = node.Parents[i];
+                    if (padre != null && !toDelete.Contains(padre))
                     {
-                        padre.Children.Remove(root);
-                        if (adyacencia.ContainsKey(padre))
-                            adyacencia[padre].Remove(root);
+                        padre.Children.Remove(node);
+                        if (adyacencia.ContainsKey(padre)) adyacencia[padre].Remove(node);
                     }
+                    node.Parents[i] = null;
                 }
             }
 
-            // desvincular pareja
-            if (root.Partner != null)
+            // 2) Romper parejas recíprocas
+            foreach (var node in toDelete)
             {
-                var pareja = root.Partner;
-                pareja.partner = null;
-                root.partner = null;
+                if (node.partner != null)
+                {
+                    if (node.partner.partner == node) node.partner.partner = null;
+                    node.partner = null;
+                }
             }
 
-            // eliminar nodo del grafo
-            adyacencia.Remove(root);
+            // 3) Eliminar entradas del diccionario y limpiar referencias desde nodos que quedan
+            foreach (var node in toDelete)
+                if (adyacencia.ContainsKey(node)) adyacencia.Remove(node);
 
-            // limpiar referencias desde otros nodos
             var keys = new List<Person>(adyacencia.Keys);
-            foreach (var key in keys)
+            foreach (var k in keys)
             {
-                if (adyacencia[key].Contains(root))
-                    adyacencia[key].Remove(root);
-                if (key.Children.Contains(root))
-                    key.Children.Remove(root);
+                // eliminar referencias colgantes en adyacencia y children
+                foreach (var dead in toDelete)
+                {
+                    adyacencia[k].Remove(dead);
+                    k.Children.Remove(dead);
+                }
             }
         }
 
-        // Elimina solo un nodo y rompe sus vínculos directos (sin tocar hijos)
+        // Elimina solo el nodo p (sin tocar sus descendientes)
         private void RemoveSingleNode(Person p)
         {
-            if (p == null) return;
-            if (!adyacencia.ContainsKey(p)) return;
+            if (p == null || !adyacencia.ContainsKey(p)) return;
 
-            // Quitar de los padres
+            // quitar de padres
             if (p.Parents != null)
             {
                 foreach (var padre in p.Parents)
                 {
-                    if (padre != null)
-                    {
-                        padre.Children.Remove(p);
-                        if (adyacencia.ContainsKey(padre))
-                            adyacencia[padre].Remove(p);
-                    }
+                    if (padre == null) continue;
+                    padre.Children.Remove(p);
+                    if (adyacencia.ContainsKey(padre)) adyacencia[padre].Remove(p);
                 }
+                for (int i = 0; i < p.Parents.Length; i++) p.Parents[i] = null;
             }
 
-            // Quitar relación de pareja
+            // romper pareja recíproca
             if (p.partner != null)
             {
-                var pareja = p.partner;
-                if (pareja.partner == p) pareja.partner = null;
+                if (p.partner.partner == p) p.partner.partner = null;
                 p.partner = null;
             }
 
-            // Quitar referencias en hijos (sin borrar hijos)
+            // limpiar referencias en hijos (sin borrar hijos)
             if (p.Children != null)
             {
                 foreach (var ch in p.Children)
-                {
-                    if (ch.Parents != null)
-                    {
+                    if (ch?.Parents != null)
                         for (int i = 0; i < ch.Parents.Length; i++)
-                        {
-                            if (ch.Parents[i] == p)
-                                ch.Parents[i] = null;
-                        }
-                    }
-                }
+                            if (ch.Parents[i] == p) ch.Parents[i] = null;
             }
 
-            // Eliminar del grafo
+            // eliminar del diccionario y limpiar referencias externas
             adyacencia.Remove(p);
-
-            // Limpiar referencias de otros nodos
             var keys = new List<Person>(adyacencia.Keys);
-            foreach (var key in keys)
+            foreach (var k in keys)
             {
-                if (adyacencia[key].Contains(p))
-                    adyacencia[key].Remove(p);
-                if (key.Children.Contains(p))
-                    key.Children.Remove(p);
+                adyacencia[k].Remove(p);
+                k.Children.Remove(p);
             }
+        }
+
+        // DeletePerson: lógica compacta para tus 4 casos
+        public void DeletePerson(Person p)
+        {
+            if (p == null || !adyacencia.ContainsKey(p)) return;
+
+            bool hasParents = HasParents(p);
+            bool hasPartner = p.Partner != null;
+
+            if (!hasParents && !hasPartner)          // Caso 1
+                DeleteComponent(p);
+            else if (!hasParents && hasPartner)      // Caso 2
+            {
+                var pareja = p.Partner;
+                if (!adyacencia.ContainsKey(pareja)) AddPerson(pareja);
+
+                // reasignar hijos a la pareja
+                foreach (var h in new List<Person>(p.Children))
+                {
+                    if (h.Parents != null)
+                        for (int i = 0; i < h.Parents.Length; i++)
+                            if (h.Parents[i] == p) h.Parents[i] = pareja;
+
+                    if (!pareja.Children.Contains(h)) pareja.AddChild(h);
+                    if (!adyacencia.ContainsKey(pareja)) adyacencia[pareja] = new List<Person>();
+                    if (!adyacencia[pareja].Contains(h)) adyacencia[pareja].Add(h);
+                }
+
+                // romper pareja y quitar p
+                if (pareja.partner == p) pareja.partner = null;
+                p.partner = null;
+                RemoveSingleNode(p);
+            }
+            else if (hasParents && hasPartner)       // Caso 3
+            {
+                var pareja = p.Partner;
+                if (p.partner == pareja) p.partner = null;
+                if (pareja.partner == p) pareja.partner = null;
+                DeleteComponent(pareja);
+            }
+            else /* hasParents && !hasPartner */    // Caso 4
+                DeleteComponent(p);
+
+            RebuildAdjacency();
+            CalculatePositions();
         }
 
         public List<Person> GetRoots() //Obtiene las personas que no son hijos de nadie, las personas raiz

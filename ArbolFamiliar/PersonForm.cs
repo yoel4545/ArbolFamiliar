@@ -242,7 +242,6 @@ namespace ArbolFamiliar
             return true;
         }
 
-    
         public DateTime? GetFechaFallecimiento()
         {
             if (chkViva.Checked)
@@ -260,6 +259,11 @@ namespace ArbolFamiliar
 
         private void PersonForm_Load(object sender, EventArgs e)
         {
+        }
+
+        private void PersonForm_Load_1(object sender, EventArgs e)
+        {
+
         }
     }
 }

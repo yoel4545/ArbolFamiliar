@@ -161,8 +161,19 @@ namespace ArbolFamiliar
         {
             if (e.Button == MouseButtons.Left && e.X > sidePanel.Width)
             {
-                selectedPerson = DetectClickedPerson(e);
-                UpdateInfoPanel();
+                if (selectedPerson != null)
+                {
+                    Person p = DetectClickedPerson(e);
+                    if (p != null)
+                    {
+                       selectedPerson = p;
+                    }
+                }
+                else
+                {
+                    selectedPerson = DetectClickedPerson(e);
+                }
+                    UpdateInfoPanel();
                 dragging = true;
                 lastMouse = e.Location;
             }

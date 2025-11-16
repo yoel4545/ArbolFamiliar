@@ -30,13 +30,14 @@
         {
             this.SuspendLayout();
             // 
-            // AddPerson
+            // PersonForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Name = "AddPerson";
+            this.Name = "PersonForm";
             this.Text = "Form2";
+            this.Load += new System.EventHandler(this.PersonForm_Load_1);
             this.ResumeLayout(false);
 
         }
