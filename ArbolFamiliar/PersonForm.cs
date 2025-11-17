@@ -16,6 +16,7 @@ namespace ArbolFamiliar
         public CheckBox chkViva;
         public PictureBox picFoto;
         public Button btnSeleccionarFoto;
+        public Person selectedPerson;
 
         public string FotoPath { get; private set; } = "";
         public bool Confirmado { get; private set; } = false;
@@ -30,6 +31,20 @@ namespace ArbolFamiliar
             this.MinimizeBox = false;
 
             CrearControles();
+            
+        }
+        public PersonForm(Person selectedPerson, string titulo = "Nueva Persona")
+        {
+            this.Text = titulo;
+            this.Size = new Size(400, 500);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.selectedPerson = selectedPerson;
+
+            CrearControles();
+            AddExistingInfo();
         }
 
         private void CrearControles()
@@ -264,6 +279,41 @@ namespace ArbolFamiliar
         private void PersonForm_Load_1(object sender, EventArgs e)
         {
 
+        }
+
+        private void AddExistingInfo()
+        {
+            if (selectedPerson != null)
+            {
+                txtNombre.Text = selectedPerson.GetName;
+                txtId.Text = selectedPerson.GetId;
+                dateNacimiento.Value = selectedPerson.birthdate;
+
+                // Coordenadas
+                txtLatitud.Text = selectedPerson.Latitud.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                txtLongitud.Text = selectedPerson.Longitud.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+                // Fallecimiento / Estado
+                if (selectedPerson.deathDate.HasValue)
+                {
+                    chkViva.Checked = false;
+                    dateFallecimiento.Enabled = true;
+                    dateFallecimiento.Value = selectedPerson.deathDate.Value;
+                }
+                else
+                {
+                    chkViva.Checked = true;
+                    dateFallecimiento.Enabled = false;
+                }
+
+                // Imagen
+                if (!string.IsNullOrEmpty(selectedPerson.fotoPath) && File.Exists(selectedPerson.fotoPath))
+                {
+                    try { picFoto.Image = Image.FromFile(selectedPerson.fotoPath); }
+                    catch { }
+                    FotoPath = selectedPerson.fotoPath;
+                }
+            }
         }
     }
 }

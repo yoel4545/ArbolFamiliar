@@ -17,7 +17,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
         public GrafoGenealogico()
         {
             adyacencia = new Dictionary<Person, List<Person>>();
-            horizontalSpacing = 200;
+            horizontalSpacing = 100;
             verticalSpacing = 175;
             radius = 30;
         }
