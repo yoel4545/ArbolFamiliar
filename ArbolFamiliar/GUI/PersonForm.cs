@@ -269,8 +269,8 @@ namespace ArbolFamiliar
             }
         }
 
-        public double GetLatitud() => double.Parse(txtLatitud.Text);
-        public double GetLongitud() => double.Parse(txtLongitud.Text);
+        public double GetLatitud() => double.Parse(txtLatitud.Text, System.Globalization.CultureInfo.InvariantCulture);
+        public double GetLongitud() => double.Parse(txtLongitud.Text, System.Globalization.CultureInfo.InvariantCulture);
 
         private void PersonForm_Load(object sender, EventArgs e)
         {
