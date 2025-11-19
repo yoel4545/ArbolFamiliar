@@ -130,10 +130,9 @@ namespace ArbolFamiliar
             }
         }
 
-       
+
         private void MostrarPersonasReales()
         {
-            
             mapa.Overlays.Clear();
 
             var overlayMarcadores = new GMapOverlay("marcadores");
@@ -163,36 +162,39 @@ namespace ArbolFamiliar
                 overlayMarcadores.Markers.Add(marcador);
             }
 
-            // Crear líneas solo entre personas relacionadas
-            foreach (var personaA in personasConCoordenadas)
+            // MODIFICACIÓN: Crear líneas entre TODOS los pares de personas
+            for (int i = 0; i < personasConCoordenadas.Count; i++)
             {
-                foreach (var personaB in personasConCoordenadas)
+                for (int j = i + 1; j < personasConCoordenadas.Count; j++)
                 {
-                    if (personaA != personaB && EstanRelacionadas(personaA, personaB))
+                    var personaA = personasConCoordenadas[i];
+                    var personaB = personasConCoordenadas[j];
+
+                    if (grafoGeo.GetDistancias().TryGetValue(personaA, out var distanciasDesdeA) &&
+                        distanciasDesdeA.TryGetValue(personaB, out double distanciaKm))
                     {
-                        if (grafoGeo.GetDistancias().TryGetValue(personaA, out var distanciasDesdeA) &&
-                            distanciasDesdeA.TryGetValue(personaB, out double distanciaKm))
+                        // Dibujar línea entre todas las personas
+                        var ruta = new GMapRoute(new List<PointLatLng>
+                {
+                    new PointLatLng(personaA.Latitud, personaA.Longitud),
+                    new PointLatLng(personaB.Latitud, personaB.Longitud)
+                }, "ruta");
+
+                        // Color diferente según el tipo de relación (si están relacionadas)
+                        var color = EstanRelacionadas(personaA, personaB) ?
+                                   ObtenerColorRelacion(personaA, personaB) :
+                                   Color.LightGray; // Color gris claro para no relacionados
+
+                        ruta.Stroke = new Pen(color, 2);
+                        overlayRutas.Routes.Add(ruta);
+
+                        // Texto con distancia (solo para distancias significativas)
+                        if (distanciaKm > 1)
                         {
-                            // Dibujar línea
-                            var ruta = new GMapRoute(new List<PointLatLng>
-                            {
-                                new PointLatLng(personaA.Latitud, personaA.Longitud),
-                                new PointLatLng(personaB.Latitud, personaB.Longitud)
-                            }, "ruta");
-
-                            // Color diferente según el tipo de relación
-                            var color = ObtenerColorRelacion(personaA, personaB);
-                            ruta.Stroke = new Pen(color, 2);
-                            overlayRutas.Routes.Add(ruta);
-
-                            // Texto con distancia (solo para distancias significativas)
-                            if (distanciaKm > 1)
-                            {
-                                double latMedio = (personaA.Latitud + personaB.Latitud) / 2;
-                                double lonMedio = (personaA.Longitud + personaB.Longitud) / 2;
-                                var textoKm = new TextoEnMapa(new PointLatLng(latMedio, lonMedio), $"{distanciaKm:F1} km");
-                                overlayTextos.Markers.Add(textoKm);
-                            }
+                            double latMedio = (personaA.Latitud + personaB.Latitud) / 2;
+                            double lonMedio = (personaA.Longitud + personaB.Longitud) / 2;
+                            var textoKm = new TextoEnMapa(new PointLatLng(latMedio, lonMedio), $"{distanciaKm:F1} km");
+                            overlayTextos.Markers.Add(textoKm);
                         }
                     }
                 }
