@@ -292,16 +292,16 @@ namespace ArbolFamiliar
         private Color ObtenerColorRelacion(Person personaA, Person personaB)
         {
             if (personaA.Partner == personaB || personaB.Partner == personaA)
-                return Color.Red; // Pareja - Rojo
+                return Color.Black; // Pareja - Rojo
 
             if ((personaA.Parents != null && Array.Exists(personaA.Parents, p => p == personaB)) ||
                 (personaB.Parents != null && Array.Exists(personaB.Parents, p => p == personaA)))
-                return Color.Blue; // Padre/Hijo - Azul
+                return Color.Black; // Padre/Hijo - Azul
 
             if (SonHermanos(personaA, personaB))
-                return Color.Green; // Hermanos - Verde
+                return Color.Black; // Hermanos - Verde
 
-            return Color.Gray; // Otro tipo de relación - Gris
+            return Color.Black; // Otro tipo de relación - Gris
         }
         private string ObtenerTipoRelacion(Person personaA, Person personaB)
         {
