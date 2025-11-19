@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace ArbolFamiliar
 {
     
-    internal class GrafoGeografico
+    public class GrafoGeografico
     {
         // Diccionario que guarda las distancias entre cada par de personas
         private Dictionary<Person, Dictionary<Person, double>> distancias;
