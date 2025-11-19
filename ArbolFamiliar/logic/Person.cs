@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace ArbolFamiliar
@@ -34,17 +35,17 @@ namespace ArbolFamiliar
             }
         }
 
-        public Person(string name, string id, DateTime birthdate, string photoPath, double lat=0, double lng = 0, DateTime? deathDate = null) //Metodo constructor con informacion basica, para un familiar vivo
+        public Person(string name, string id, DateTime birthdate, string photoPath, double lat = 0, double lng = 0, DateTime? deathDate = null) //Metodo constructor con informacion basica, para un familiar vivo
         {
             this.name = name;
             this.id = id;
-            
+
             this.birthdate = birthdate;
             this.deathDate = deathDate;
             this.fotoPath = photoPath;
             children = new List<Person>();
             parents = new Person[2]; //Maximo dos padres
-            this.Latitud = lat;    
+            this.Latitud = lat;
             this.Longitud = lng;
             this.level = 0;
 
@@ -114,13 +115,13 @@ namespace ArbolFamiliar
 
         public void AddPartner(Person newPartner)
         {
-            
+
             if (!CanAddPartner(newPartner)) return;
 
             partner = newPartner;
             newPartner.partner = this;
 
-            
+
             // Asegurar que ambas tengan listas inicializadas
             if (newPartner.children == null)
                 newPartner.children = new List<Person>();
@@ -259,5 +260,37 @@ namespace ArbolFamiliar
         }
 
         public string GetId => id;
+
+        public string ToOwnPropertiesWithRelativesString()
+        {
+            // Propiedades propias
+            var death = deathDate.HasValue ? deathDate.Value.ToString("yyyy-MM-dd") : "N/A";
+            var foto = string.IsNullOrEmpty(fotoPath) ? "N/A" : fotoPath;
+
+            // Pareja (solo nombre)
+            string pareja = partner != null ? partner.GetName : "Ninguna";
+
+            // Hijos (solo nombres, separados por coma)
+            string hijos;
+            if (children == null || children.Count == 0)
+            {
+                hijos = "Ninguno";
+            }
+            else
+            {
+                hijos = string.Join(", ", children.Where(h => h != null).Select(h => h.GetName));
+            }
+
+            return
+                $"Nombre: {name ?? ""}\n" +
+                $"Level: {level.ToString() ?? ""}\n" +
+                $"Pareja: {pareja}\n" +
+                $"Hijos: {hijos}\n";
+        }
+
+        public void PrintOwnPropertiesWithRelatives()
+        {
+            Debug.WriteLine(ToOwnPropertiesWithRelativesString());
+        }
     }
 }
