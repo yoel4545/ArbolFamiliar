@@ -183,7 +183,7 @@ namespace ArbolFamiliar
                         // Color diferente según el tipo de relación (si están relacionadas)
                         var color = EstanRelacionadas(personaA, personaB) ?
                                    ObtenerColorRelacion(personaA, personaB) :
-                                   Color.LightGray; // Color gris claro para no relacionados
+                                   Color.Black; // Color gris claro para no relacionados
 
                         ruta.Stroke = new Pen(color, 2);
                         overlayRutas.Routes.Add(ruta);
@@ -220,30 +220,23 @@ namespace ArbolFamiliar
         }
         private void MostrarInformacionPersona(Person persona)
         {
-            string mensaje = $"Información de la Persona:\n" +
-                             $"Nombre: {persona.GetName}\n" +
-                             $"Cédula: {persona.id}\n" +
-                             $"Coordenadas: {persona.Latitud:F4}, {persona.Longitud:F4}\n\n";
-
             if (grafoGeo != null && grafoGeo.GetDistancias().ContainsKey(persona))
             {
-                mensaje += $"Distancias a familiares:\n";
-                foreach (var kvp in grafoGeo.GetDistancias()[persona])
+                // Obtener todas las distancias para esta persona
+                var distancias = grafoGeo.GetDistancias()[persona];
+
+                // Mostrar en el nuevo Form con ListBox
+                using (var formDistancias = new DistanciasForm(persona, distancias))
                 {
-                    if (EstanRelacionadas(persona, kvp.Key))
-                    {
-                        string tipoRelacion = ObtenerTipoRelacion(persona, kvp.Key);
-                        mensaje += $"- {kvp.Key.GetName} ({tipoRelacion}): {kvp.Value:F2} km\n";
-                    }
+                    formDistancias.ShowDialog();
                 }
             }
             else
             {
-                mensaje += "No se encontraron distancias geográficas.";
+                MessageBox.Show("No se encontraron distancias geográficas para esta persona.", "Información");
             }
-
-            MessageBox.Show(mensaje, "Detalles del Familiar");
         }
+
 
 
         private bool EstanRelacionadas(Person personaA, Person personaB)

@@ -58,6 +58,9 @@
     <Compile Include="GUI\arbolForm.Designer.cs">
       <DependentUpon>arbolForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="GUI\DistanciasForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="logic\ArbolGenealogico.cs" />
     <Compile Include="GUI\Ayuda.cs">
       <SubType>Form</SubType>
