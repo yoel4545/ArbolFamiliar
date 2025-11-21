@@ -61,6 +61,29 @@ namespace ArbolFamiliar
             level = newLevel;
         }
 
+        public bool HasSiblings()
+        {
+            // Si no tiene arreglo de padres o ninguno asignado, no puede tener hermanos
+            if (parents == null) return false;
+
+            for (int i = 0; i < parents.Length; i++)
+            {
+                var p = parents[i];
+                if (p == null) continue;
+                if (p.children != null)
+                {
+                    int otherChildren = 0;
+                    foreach (var c in p.children)
+                    {
+                        if (c == null) continue;
+                        if (c != this) otherChildren++;
+                        if (otherChildren > 0) return true; // hay al menos otro hijo -> hermano
+                    }
+                }
+            }
+            return false;
+        }
+
         public void AddChild(Person child) //Añade un hijo a la lista de hijos propia
         {
             if (children == null)
@@ -151,14 +174,29 @@ namespace ArbolFamiliar
 
         public bool CanAddParent()
         {
+            // Si ya tiene dos padres, no puede agregar más
+            if (parents != null && parents.Length >= 2 && parents[0] != null && parents[1] != null)
+                return false;
+
+            // Si tiene pareja y la pareja ya tiene padres,
+            // permitir sólo si la pareja NO tiene hermanos.
             if (partner != null)
             {
-                if (partner.parents[1] != null || partner.parents[0] != null)
+                bool partnerHasAnyParent = (partner.parents != null) &&
+                                           (partner.parents.Length > 0) &&
+                                           (partner.parents[0] != null || (partner.parents.Length > 1 && partner.parents[1] != null));
+
+                if (partnerHasAnyParent)
                 {
-                    return false;
+                    // Si la pareja tiene hermanos -> no permitir
+                    if (partner.HasSiblings())
+                        return false;
+                    // Si la pareja NO tiene hermanos -> permitir (seguir)
                 }
             }
-            return !(parents[0] != null && parents[1] != null);
+
+            // En cualquier otro caso, permitir si aún no tiene 2 padres
+            return true;
         }
 
         public void AddParent(Person parent)
