@@ -12,200 +12,205 @@ namespace ArbolFamiliar
         private Point panOffset = new Point(0, 0);
         private Point lastMouse;
         private bool dragging = false;
-        public static GrafoGenealogico grafo;
         private float zoom = 1.0f;
-        private Person selectedPerson = null;
 
-        // Panel lateral y botones
+        private Person selectedPerson = null;
+        public static GrafoGenealogico grafo;
+
         private Panel sidePanel;
         private Label infoLabel;
         private PictureBox profilePictureBox;
-        private Button btnAddChild, btnAddPatner, btnAddParent, btnDelete, btnChangeInfo;
-        private Button btnBack;
+        private Button btnAddChild, btnAddPatner, btnAddParent, btnDelete, btnChangeInfo, btnBack, btnCenter;
+        private Panel marcoContainer;
+
+        private Image backgroundImage;
+        private static Image marcoGlobal = null;
 
         public arbolForm()
         {
             InitializeComponent();
-            this.DoubleBuffered = true;
-            this.BackColor = Color.White;
+            ConfigurarVentana();
 
-            if (grafo == null)
+            // Cargar imagen de fondo (puedes cambiar la ruta a la tuya)
+            string fondoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "fondo_arbol.jpg");
+            if (File.Exists(fondoPath))
             {
-                grafo = new GrafoGenealogico();
+                backgroundImage = Image.FromFile(fondoPath);
             }
 
-            this.Load += ArbolForm_Load;
-            this.Paint += ArbolForm_Paint;
-            this.MouseDown += ArbolForm_MouseDown;
-            this.MouseMove += ArbolForm_MouseMove;
-            this.MouseUp += ArbolForm_MouseUp;
-            this.MouseWheel += ArbolForm_MouseWheel;
-            this.FormBorderStyle = FormBorderStyle.None;
-            this.WindowState = FormWindowState.Maximized;
+            if (grafo == null)
+                grafo = new GrafoGenealogico();
 
-            InitSidePanel();
+            AsignarEventos();
+            CrearPanelLateral();
         }
 
-        private void InitSidePanel()
+        // Configura la ventana principal
+        private void ConfigurarVentana()
+        {
+            DoubleBuffered = true;
+            BackColor = Color.White;
+            FormBorderStyle = FormBorderStyle.None;
+            WindowState = FormWindowState.Maximized;
+        }
+
+        // Asocia eventos de carga, dibujo, y ratón
+        private void AsignarEventos()
+        {
+            Load += ArbolForm_Load;
+            Paint += ArbolForm_Paint;
+            MouseDown += ArbolForm_MouseDown;
+            MouseMove += ArbolForm_MouseMove;
+            MouseUp += ArbolForm_MouseUp;
+            MouseWheel += ArbolForm_MouseWheel;
+        }
+
+        // Crea el panel lateral con los botones e información
+        private void CrearPanelLateral()
         {
             sidePanel = new Panel
             {
                 Dock = DockStyle.Left,
-                Width = 300,
-                BackColor = Color.FromArgb(250, 250, 250)
+                Width = 400,
+                BackColor = ColorTranslator.FromHtml("#3f5030")
             };
-            this.Controls.Add(sidePanel);
+            Controls.Add(sidePanel);
 
-            // --- Botón "Regresar" (estándar, arriba izquierda) ---
-            btnBack = new Button
-            {
-                Text = "← Regresar",
-                Font = new Font("Segoe UI", 9, FontStyle.Regular),
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(90, 30),
-                Location = new Point(10, 10),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left,
-            };
-            btnBack.FlatAppearance.BorderSize = 0;
-            btnBack.BackColor = Color.Transparent;
-            btnBack.Click += (s, e) => { this.Close(); };
+            CrearBotonRegresar();
+            CrearTitulo();
+            CrearFotoPerfil();
+            CrearInfoLabel();
+            CrearBotonesInferiores();
+
+            UpdateInfoPanel();
+        }
+
+
+
+        private void CrearBotonRegresar()
+        {
+            btnBack = CrearBoton("← Regresar", 10, 10, 90, 30, Color.Transparent, Color.Black);
+            btnBack.Click += (s, e) => Close();
             sidePanel.Controls.Add(btnBack);
-            btnBack.BringToFront();
+        }
 
-            // --- Título ---
+        private void CrearTitulo()
+        {
             Label title = new Label
             {
                 Text = "Información",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                TextAlign = ContentAlignment.MiddleLeft,
+                Font = new Font("Garamond", 16, FontStyle.Bold),
+                ForeColor = Color.White,
                 Location = new Point(10, 50),
-                Size = new Size(220, 30)
+                Size = new Size(220, 30),
+                TextAlign = ContentAlignment.MiddleLeft
             };
             sidePanel.Controls.Add(title);
+        }
 
-            // --- Foto de perfil (primero) ---
+        // Crea el recuadro para la foto de perfil
+        private void CrearFotoPerfil()
+        {
+            // Contenedor del marco y la foto
+            marcoContainer = new Panel
+            {
+                Size = new Size(190, 190), // un poco más grande que la foto
+                Location = new Point((sidePanel.Width - 190) / 2, 100),
+                BackColor = Color.Transparent // no pintar fondo
+            };
+            marcoContainer.Paint += MarcoContainer_Paint;
+
+            // PictureBox dentro del panel
             profilePictureBox = new PictureBox
             {
-                Size = new Size(140, 140),
-                Location = new Point(10, 90),
-                SizeMode = PictureBoxSizeMode.Zoom,
-                BorderStyle = BorderStyle.None,
-                BackColor = Color.FromArgb(240, 240, 240)
+                Size = new Size(160, 160),
+                Location = new Point((marcoContainer.Width - 160) / 2, (marcoContainer.Height - 160) / 2),
+                SizeMode = PictureBoxSizeMode.Normal,
+                BackColor = Color.FromArgb(235, 235, 235),
+                BorderStyle = BorderStyle.None
             };
-            sidePanel.Controls.Add(profilePictureBox);
-            profilePictureBox.Left = (sidePanel.Width - profilePictureBox.Width) / 2;
+            profilePictureBox.Paint += ProfilePictureBox_Paint;
 
-            // --- Etiqueta con la información (debajo de la foto) ---
+            // Agregar el PictureBox al contenedor y el contenedor al panel lateral
+            marcoContainer.Controls.Add(profilePictureBox);
+            sidePanel.Controls.Add(marcoContainer);
+        }
+
+
+        // Crea la etiqueta donde se mostrará la información de la persona
+        private void CrearInfoLabel()
+        {
             infoLabel = new Label
             {
                 Text = "Ninguna persona seleccionada",
-                Font = new Font("Segoe UI", 9),
-                Location = new Point(10, 240),
-                Size = new Size(sidePanel.Width - 20, 60),
+                Font = new Font("Segoe UI", 14, FontStyle.Regular), 
+                ForeColor = Color.WhiteSmoke,
+                Location = new Point(20, 300),
+                Size = new Size(sidePanel.Width - 40, 180), 
                 AutoSize = false,
                 TextAlign = ContentAlignment.TopLeft
             };
             sidePanel.Controls.Add(infoLabel);
+        }
 
-            // --- Botones inferiores estilo "Google Forms" simplificado ---
-            int buttonWidth = sidePanel.Width - 40;
-            int buttonHeight = 40;
-            int spacing = 10;
+        private void CrearBotonesInferiores()
+        {
+            int startY = 500;
+            int buttonWidth = sidePanel.Width - 60; 
+            int buttonHeight = 42;
+            int spacing = 12;
 
-            int startY = 356; // justo debajo de btnChangeInfo
+            Color azulSuave = ColorTranslator.FromHtml("#5b79a1");
+            Color rojoSuave = ColorTranslator.FromHtml("#a14f4f");
 
-            btnAddChild = new Button
-            {
-                Text = "Agregar Hijo",
-                Size = new Size(buttonWidth, buttonHeight),
-                Location = new Point(20, startY + (buttonHeight + spacing) * 0),
-                BackColor = Color.FromArgb(66, 133, 244), // azul Google
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
-            };
-            btnAddChild.FlatAppearance.BorderSize = 0;
-            sidePanel.Controls.Add(btnAddChild);
-            MakeRoundedButton(btnAddChild, 8);
+            btnChangeInfo = CrearBoton("Cambiar Información", 30, startY, buttonWidth, buttonHeight, azulSuave);
+            btnCenter = CrearBoton("Centrar Vista", 30, startY + 1 * (buttonHeight + spacing), buttonWidth, buttonHeight, azulSuave);
+            btnAddChild = CrearBoton("Agregar Hijo", 30, startY + 2 * (buttonHeight + spacing), buttonWidth, buttonHeight, azulSuave);
+            btnAddParent = CrearBoton("Agregar Padre", 30, startY + 3 * (buttonHeight + spacing), buttonWidth, buttonHeight, azulSuave);
+            btnAddPatner = CrearBoton("Agregar Pareja", 30, startY + 4 * (buttonHeight + spacing), buttonWidth, buttonHeight, azulSuave);
+            btnDelete = CrearBoton("Eliminar", 30, startY + 5 * (buttonHeight + spacing), buttonWidth, buttonHeight, rojoSuave);
+            
 
-            btnChangeInfo = new Button
-            {
-                Text = "Cambiar Información",
-                Size = new Size(buttonWidth, buttonHeight),
-                Location = new Point(20, startY + (buttonHeight + spacing) * -1),
-                BackColor = Color.FromArgb(66, 133, 244),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
-            }; 
-            btnChangeInfo.FlatAppearance.BorderSize = 0;
-            sidePanel.Controls.Add(btnChangeInfo);
-            MakeRoundedButton(btnChangeInfo, 8);
+            sidePanel.Controls.AddRange(new Control[] { btnChangeInfo, btnAddChild, btnAddParent, btnAddPatner, btnDelete, btnCenter });
 
-            btnAddParent = new Button
-            {
-                Text = "Agregar Padre",
-                Size = new Size(buttonWidth, buttonHeight),
-                Location = new Point(20, startY + (buttonHeight + spacing) * 1),
-                BackColor = Color.FromArgb(66, 133, 244),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
-            };
-            btnAddParent.FlatAppearance.BorderSize = 0;
-            sidePanel.Controls.Add(btnAddParent);
-            MakeRoundedButton(btnAddParent, 8);
-
-            btnAddPatner = new Button
-            {
-                Text = "Agregar Pareja",
-                Size = new Size(buttonWidth, buttonHeight),
-                Location = new Point(20, startY + (buttonHeight + spacing) * 2),
-                BackColor = Color.FromArgb(66, 133, 244),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
-            };
-            btnAddPatner.FlatAppearance.BorderSize = 0;
-            sidePanel.Controls.Add(btnAddPatner);
-            MakeRoundedButton(btnAddPatner, 8);
-
-            btnDelete = new Button
-            {
-                Text = "Eliminar",
-                Size = new Size(buttonWidth, buttonHeight),
-                Location = new Point(20, startY + (buttonHeight + spacing) * 3),
-                BackColor = Color.FromArgb(220, 75, 75), // rojo suave
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
-            };
-            btnDelete.FlatAppearance.BorderSize = 0;
-            sidePanel.Controls.Add(btnDelete);
-            MakeRoundedButton(btnDelete, 8);
-
-            // Asignar handlers
             btnChangeInfo.Click += BtnChangeInfo_Click;
             btnAddChild.Click += BtnAddChild_Click;
             btnAddParent.Click += BtnAddParent_Click;
             btnAddPatner.Click += BtnAddPatner_Click;
             btnDelete.Click += BtnDelete_Click;
-
-            UpdateInfoPanel();
+            btnCenter.Click += BtnCenter_Click;
         }
 
-        // Helper para redondear botones
-        private void MakeRoundedButton(Button b, int radius)
+
+        private Button CrearBoton(string texto, int x, int y, int w, int h, Color bg, Color? fg = null)
         {
-            if (b == null) return;
-            var path = new GraphicsPath();
-            var rect = new Rectangle(0, 0, b.Width, b.Height);
-            int r = Math.Min(radius, Math.Min(b.Width / 2, b.Height / 2));
+            Button b = new Button
+            {
+                Text = texto,
+                Size = new Size(w, h),
+                Location = new Point(x, y),
+                BackColor = bg,
+                ForeColor = fg ?? Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            b.FlatAppearance.BorderSize = 0;
+            RedondearBoton(b, 8);
+            return b;
+        }
+
+        // Redondea los bordes del botón (solo estética)
+        private void RedondearBoton(Button b, int radio)
+        {
+            GraphicsPath path = new GraphicsPath();
+            Rectangle rect = new Rectangle(0, 0, b.Width, b.Height);
+            int r = Math.Min(radio, Math.Min(b.Width / 2, b.Height / 2));
+
             path.AddArc(rect.X, rect.Y, r, r, 180, 90);
             path.AddArc(rect.Right - r, rect.Y, r, r, 270, 90);
             path.AddArc(rect.Right - r, rect.Bottom - r, r, r, 0, 90);
             path.AddArc(rect.X, rect.Bottom - r, r, r, 90, 90);
             path.CloseFigure();
+
             b.Region = new Region(path);
         }
 
@@ -215,29 +220,27 @@ namespace ArbolFamiliar
             Invalidate();
         }
 
+        // Dibuja el fondo y luego los nodos del árbol
         private void ArbolForm_Paint(object sender, PaintEventArgs e)
         {
+            // Dibuja la imagen de fondo si existe
+            if (backgroundImage != null)
+            {
+                e.Graphics.DrawImage(backgroundImage, new Rectangle(sidePanel.Width, 0, Width - sidePanel.Width, Height));
+            }
+
             e.Graphics.TranslateTransform(panOffset.X + sidePanel.Width, panOffset.Y);
             e.Graphics.ScaleTransform(zoom, zoom);
             grafo.DrawNodes(e.Graphics);
         }
 
+        // Mueve el árbol con click y arrastre
         private void ArbolForm_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left && e.X > sidePanel.Width)
             {
-                if (selectedPerson != null)
-                {
-                    Person p = DetectClickedPerson(e);
-                    if (p != null)
-                    {
-                        selectedPerson = p;
-                    }
-                }
-                else
-                {
-                    selectedPerson = DetectClickedPerson(e);
-                }
+                Person res = DetectarPersonaClickeada(e);
+                if (res !=null) selectedPerson = res;
                 UpdateInfoPanel();
                 dragging = true;
                 lastMouse = e.Location;
@@ -246,13 +249,11 @@ namespace ArbolFamiliar
 
         private void ArbolForm_MouseMove(object sender, MouseEventArgs e)
         {
-            if (dragging)
-            {
-                panOffset.X += e.X - lastMouse.X;
-                panOffset.Y += e.Y - lastMouse.Y;
-                lastMouse = e.Location;
-                Invalidate();
-            }
+            if (!dragging) return;
+            panOffset.X += e.X - lastMouse.X;
+            panOffset.Y += e.Y - lastMouse.Y;
+            lastMouse = e.Location;
+            Invalidate();
         }
 
         private void ArbolForm_MouseUp(object sender, MouseEventArgs e)
@@ -261,6 +262,7 @@ namespace ArbolFamiliar
                 dragging = false;
         }
 
+        // Cambia el zoom con la rueda del mouse
         private void ArbolForm_MouseWheel(object sender, MouseEventArgs e)
         {
             float oldZoom = zoom;
@@ -273,7 +275,8 @@ namespace ArbolFamiliar
             Invalidate();
         }
 
-        private Person DetectClickedPerson(MouseEventArgs e)
+        // Devuelve la persona sobre la que se hizo click (si hay una)
+        private Person DetectarPersonaClickeada(MouseEventArgs e)
         {
             float worldX = (e.X - panOffset.X - sidePanel.Width) / zoom;
             float worldY = (e.Y - panOffset.Y) / zoom;
@@ -289,52 +292,69 @@ namespace ArbolFamiliar
             return null;
         }
 
+        // Actualiza la información lateral cuando se selecciona una persona
         private void UpdateInfoPanel()
         {
             if (selectedPerson == null)
             {
                 infoLabel.Text = "Ninguna persona seleccionada";
                 profilePictureBox.Image = null;
+                return;
             }
-            else
+
+            // Construimos el texto de forma más legible
+            infoLabel.Text =
+                $"Nombre: {selectedPerson.GetName}\n" +
+                $"ID: {selectedPerson.GetId}\n" +
+                $"Edad: {selectedPerson.Edad}\n" +
+                $"Nacimiento: {selectedPerson.birthdate.ToShortDateString()}\n" +
+                (selectedPerson.deathDate.HasValue ? $"Fallecimiento: {selectedPerson.deathDate.Value.ToShortDateString()}\n" : "") +
+                $"Hijos: {selectedPerson.Children.Count}\n" +
+                $"Latitud: {selectedPerson.Latitud:F5}\n" +
+                $"Longitud: {selectedPerson.Longitud:F5}";
+
+            // Cargar la foto de perfil
+            profilePictureBox.Image = CargarImagen(selectedPerson);
+
+            // Forzar el repintado para mostrar la imagen con el marco
+            profilePictureBox.Invalidate();
+        }
+
+
+        // Carga la foto de perfil de la persona, si existe
+        private Image CargarImagen(Person persona)
+        {
+            string fotoPath = ObtenerFotoPath(persona);
+
+            if (string.IsNullOrEmpty(fotoPath) || !File.Exists(fotoPath))
+                return null;
+
+            try
             {
-                infoLabel.Text =
-                    $"Nombre: {selectedPerson.GetName}\n" +
-                    $"ID: {selectedPerson.GetId}\n" +
-                    $"Edad: {selectedPerson.Edad}\n" +
-                    $"Fecha de Nacimiento: {selectedPerson.birthdate.ToShortDateString()}\n" +
-                    $"Hijos: {selectedPerson.Children.Count}";
-
-                // Cargar imagen de perfil si existe (intenta varias convenciones de nombre)
-                string fotoPath = null;
-                var t = selectedPerson.GetType();
-                var prop = t.GetProperty("FotoPath") ?? t.GetProperty("fotoPath") ?? t.GetProperty("Foto") ?? t.GetProperty("PhotoPath") ?? t.GetProperty("photoPath");
-                if (prop != null)
+                using (var fs = new FileStream(fotoPath, FileMode.Open, FileAccess.Read))
                 {
-                    fotoPath = prop.GetValue(selectedPerson) as string;
+                    return Image.FromStream(fs);
                 }
-
-                if (!string.IsNullOrEmpty(fotoPath) && File.Exists(fotoPath))
-                {
-                    try
-                    {
-                        using (var fs = new FileStream(fotoPath, FileMode.Open, FileAccess.Read))
-                        {
-                            profilePictureBox.Image = Image.FromStream(fs);
-                        }
-                    }
-                    catch
-                    {
-                        profilePictureBox.Image = null;
-                    }
-                }
-                else
-                {
-                    profilePictureBox.Image = null;
-                }
+            }
+            catch
+            {
+                return null;
             }
         }
 
+        private string ObtenerFotoPath(Person persona)
+        {
+            var tipo = persona.GetType();
+            var prop = tipo.GetProperty("FotoPath") ??
+                       tipo.GetProperty("fotoPath") ??
+                       tipo.GetProperty("Foto") ??
+                       tipo.GetProperty("PhotoPath") ??
+                       tipo.GetProperty("photoPath");
+
+            return prop != null ? prop.GetValue(persona) as string : null;
+        }
+
+        // Abre el formulario para crear una nueva persona
         private Person MostrarFormularioNuevaPersona(string titulo)
         {
             using (var form = new PersonForm(titulo))
@@ -354,6 +374,8 @@ namespace ArbolFamiliar
             }
             return null;
         }
+
+        // Abre el formulario para editar una persona existente
         private void MostrarFormularioPersonaExistente(string titulo)
         {
             if (selectedPerson == null) return;
@@ -362,7 +384,6 @@ namespace ArbolFamiliar
             {
                 if (form.ShowDialog() == DialogResult.OK && form.Confirmado)
                 {
-                    // Actualiza los datos en el objeto existente
                     selectedPerson.name = form.txtNombre.Text;
                     selectedPerson.id = form.txtId.Text;
                     selectedPerson.birthdate = form.dateNacimiento.Value;
@@ -373,102 +394,160 @@ namespace ArbolFamiliar
 
                     grafo.CalculatePositions();
                     Invalidate();
-                    UpdateInfoPanel(); // refresca panel lateral
+                    UpdateInfoPanel();
                 }
             }
         }
 
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-
+        // Acciones de los botones
         private void BtnChangeInfo_Click(object sender, EventArgs e)
         {
-            if (selectedPerson == null)
-            {
-                MessageBox.Show("Debe seleccionar una persona primero.");
-                return;
-            }
-            Debug.WriteLine("Pressed Change Info");
+            if (!VerificarSeleccion()) return;
             MostrarFormularioPersonaExistente("Editar información");
         }
 
         private void BtnAddChild_Click(object sender, EventArgs e)
         {
-            Debug.WriteLine("Pressed");
-            if (selectedPerson == null)
-            {
-                MessageBox.Show("Debe seleccionar una persona primero.");
-                return;
-            }
+            if (!VerificarSeleccion()) return;
+
             var nuevo = MostrarFormularioNuevaPersona("Agregar hijo");
             if (nuevo != null)
             {
                 grafo.AddChildren(selectedPerson, nuevo);
-                grafo.CalculatePositions();
-                Invalidate();
+                ActualizarGrafo();
             }
         }
+
         private void BtnAddParent_Click(object sender, EventArgs e)
         {
-            if (selectedPerson == null)
-            {
-                MessageBox.Show("Debe seleccionar una persona primero.");
-                return;
-            }
+            if (!VerificarSeleccion()) return;
+
             if (!selectedPerson.CanAddParent())
             {
-                MessageBox.Show("Error. Máximo de padres alcanzado o no se pueden añadir padres a parejas");
+                MessageBox.Show("Esta persona ya tiene el máximo de padres permitidos.");
                 return;
             }
+
             var nuevoPadre = MostrarFormularioNuevaPersona("Agregar padre");
             if (nuevoPadre != null)
             {
                 grafo.AddParent(selectedPerson, nuevoPadre);
-                grafo.CalculatePositions();
-                Invalidate();
+                ActualizarGrafo();
             }
         }
 
         private void BtnAddPatner_Click(object sender, EventArgs e)
         {
-            if (selectedPerson == null)
-            {
-                MessageBox.Show("Debe seleccionar una persona primero.");
-                return;
-            }
+            if (!VerificarSeleccion()) return;
+
             if (selectedPerson.partner != null)
             {
-                MessageBox.Show("Error. No se pueden añadir más parejas");
+                MessageBox.Show("Esta persona ya tiene pareja.");
                 return;
             }
+
             var nuevaPareja = MostrarFormularioNuevaPersona("Agregar pareja");
             if (nuevaPareja != null)
             {
                 grafo.AddPatner(selectedPerson, nuevaPareja);
-                grafo.CalculatePositions();
-                Invalidate();
+                ActualizarGrafo();
             }
         }
 
         private void BtnDelete_Click(object sender, EventArgs e)
         {
-            if (selectedPerson == null)
-            {
-                MessageBox.Show("Debe seleccionar una persona primero.");
-                return;
-            }
+            if (!VerificarSeleccion()) return;
 
-            if (MessageBox.Show($"¿Eliminar a {selectedPerson.GetName}?", "Confirmar", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            if (MessageBox.Show("¿Eliminar a " + selectedPerson.GetName + "?", "Confirmar", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
                 grafo.DeletePerson(selectedPerson);
                 selectedPerson = null;
-                grafo.CalculatePositions();
-                Invalidate();
+                ActualizarGrafo();
             }
         }
+
+        private void BtnCenter_Click(object sender, EventArgs e)
+        {
+            panOffset = new Point(0, 0);
+            zoom = 1.0f;
+            Invalidate();
+        }
+
+        private void ActualizarGrafo()
+        {
+            grafo.CalculatePositions();
+            Invalidate();
+            UpdateInfoPanel();
+        }
+
+        private bool VerificarSeleccion()
+        {
+            if (selectedPerson == null)
+            {
+                MessageBox.Show("Debe seleccionar una persona primero.");
+                return false;
+            }
+            return true;
+        }
+
+        private void ProfilePictureBox_Paint(object sender, PaintEventArgs e)
+        {
+            PictureBox pb = sender as PictureBox;
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            e.Graphics.Clear(pb.BackColor);
+
+            if (pb.Image != null)
+            {
+                Rectangle destRect = GetBestFitRectangle(pb.Image, pb.ClientRectangle);
+                e.Graphics.DrawImage(pb.Image, destRect);
+            }
+        }
+
+
+
+        // Calcula el rectángulo ideal para centrar la imagen sin deformarla 
+        private Rectangle GetBestFitRectangle(Image img, Rectangle container)
+        {
+            float ratioImg = (float)img.Width / img.Height;
+            float ratioContainer = (float)container.Width / container.Height;
+
+            int width, height;
+
+            if (ratioImg > ratioContainer)
+            {
+                width = container.Width;
+                height = (int)(container.Width / ratioImg);
+            }
+            else
+            {
+                height = container.Height;
+                width = (int)(container.Height * ratioImg);
+            }
+            int x = container.X + (container.Width - width) / 2;
+            int y = container.Y + (container.Height - height) / 2;
+
+            return new Rectangle(x, y, width, height);
+        }
+
+        private void MarcoContainer_Paint(object sender, PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+
+            // Dibuja el marco un poco dentro del panel (ajustable)
+            string marcoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "marco.png");
+            if (File.Exists(marcoPath))
+            {
+                using (Image marco = Image.FromFile(marcoPath))
+                {
+                    // Dibuja el marco ocupando todo el contenedor
+                    e.Graphics.DrawImage(marco, new Rectangle(0, 0, ((Panel)sender).Width, ((Panel)sender).Height));
+                }
+            }
+        }
+
 
     }
 }

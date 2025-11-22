@@ -28,11 +28,13 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(arbolForm));
             this.SuspendLayout();
             // 
             // arbolForm
             // 
-            this.ClientSize = new System.Drawing.Size(1192, 714);
+            this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
+            this.ClientSize = new System.Drawing.Size(1153, 714);
             this.Name = "arbolForm";
             this.ResumeLayout(false);
 
