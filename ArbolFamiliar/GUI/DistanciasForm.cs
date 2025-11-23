@@ -105,7 +105,14 @@ namespace ArbolFamiliar
             // 
             this.ClientSize = new System.Drawing.Size(382, 353);
             this.Name = "DistanciasForm";
+            this.Load += new System.EventHandler(this.DistanciasForm_Load);
             this.ResumeLayout(false);
+
+        }
+
+        private void DistanciasForm_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

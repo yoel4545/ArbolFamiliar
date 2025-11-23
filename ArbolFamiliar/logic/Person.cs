@@ -71,10 +71,10 @@ namespace ArbolFamiliar
             {
                 children.Add(child);
 
-                // ✅ ACTUALIZADO: Actualizar nivel del hijo y propagar a sus descendientes
+                //  Actualizar nivel del hijo y propagar a sus descendientes
                 ActualizarNivelYPropagar(child, this.level + 1);
 
-                // ✅ Si tengo pareja, también agregar el hijo a la pareja
+                //  Si tengo pareja, también agregar el hijo a la pareja
                 if (partner != null && !partner.children.Contains(child))
                 {
                     partner.children.Add(child);
@@ -93,7 +93,7 @@ namespace ArbolFamiliar
                 ActualizarNivelYPropagar(hijo, nuevoNivel + 1);
             }
 
-            // ✅ ACTUALIZAR también a la pareja para mantener consistencia
+            //  ACTUALIZAR también a la pareja para mantener consistencia
             if (persona.partner != null && persona.partner.level != nuevoNivel)
             {
                 persona.partner.level = nuevoNivel;
@@ -183,7 +183,7 @@ namespace ArbolFamiliar
             if (!parent.children.Contains(this))
             {
                 parent.children.Add(this);
-                // ✅ ACTUALIZADO: Usar el nuevo método para propagar niveles
+                //  ACTUALIZADO: Usar el nuevo método para propagar niveles
                 parent.ActualizarNivelYPropagar(this, parent.level + 1);
             }
 
@@ -196,7 +196,7 @@ namespace ArbolFamiliar
                 if (!otro.children.Contains(this))
                 {
                     otro.children.Add(this);
-                    // ✅ ACTUALIZADO: Usar el nuevo método para propagar niveles
+                    //  ACTUALIZADO: Usar el nuevo método para propagar niveles
                     otro.ActualizarNivelYPropagar(this, otro.level + 1);
                 }
 

@@ -395,6 +395,11 @@ namespace ArbolFamiliar
             MostrarFormularioPersonaExistente("Editar información");
         }
 
+        private void arbolForm_Load_1(object sender, EventArgs e)
+        {
+
+        }
+
         private void BtnAddChild_Click(object sender, EventArgs e)
         {
             Debug.WriteLine("Pressed");

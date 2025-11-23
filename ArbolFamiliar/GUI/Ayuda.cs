@@ -291,9 +291,10 @@ otros problemas, revisa que estés siguiendo los pasos correctamente.";
             tabControl.TabPages.Add(tabProblemas);
         }
 
-        private void button1_Click(object sender, EventArgs e)
+
+        private void Ayuda_Load(object sender, EventArgs e)
         {
-            this.Close();
+
         }
     }
 }
