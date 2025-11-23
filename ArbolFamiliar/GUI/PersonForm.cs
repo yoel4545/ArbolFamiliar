@@ -16,21 +16,25 @@ namespace ArbolFamiliar
         public Button btnSeleccionarFoto;
         public Person selectedPerson;
         public Button btnSeleccionarUbicacion;
+        public string titulo;
 
         // Propiedades de salida
         public string FotoPath { get; private set; } = "";
         public bool Confirmado { get; private set; } = false;
 
         // Constructor: crear nueva persona
-        public PersonForm(string titulo = "Nueva Persona")
+        public PersonForm(Person selectedPerson, string titulo = "Nueva Persona")
         {
+            this.titulo = titulo;
+            this.selectedPerson = selectedPerson;
             ConfigurarFormulario(titulo);
             CrearControles();
         }
 
         // Constructor: editar persona existente
-        public PersonForm(Person selectedPerson, string titulo = "Editar Persona")
+        public PersonForm(Person selectedPerson)
         {
+            this.titulo = "Editar Persona";
             this.selectedPerson = selectedPerson;
             ConfigurarFormulario(titulo);
             CrearControles();
@@ -228,17 +232,11 @@ namespace ArbolFamiliar
                 return false;
             }
 
-            if (dateNacimiento.Value > DateTime.Now)
-            {
-                MostrarError("La fecha de nacimiento no puede ser futura.");
+            if (!VerificarFechaNacimiento())
                 return false;
-            }
 
-            if (!chkViva.Checked && dateFallecimiento.Value <= dateNacimiento.Value)
-            {
-                MostrarError("La fecha de fallecimiento debe ser posterior al nacimiento.");
+            if (!chkViva.Checked && !VerificarFechaFallecimiento())
                 return false;
-            }
 
             return true;
         }
@@ -352,5 +350,118 @@ namespace ArbolFamiliar
             };
             return btn;
         }
+
+        private bool VerificarFechaNacimiento()
+        {
+            if (dateNacimiento.Value > DateTime.Now)
+            {
+                MostrarError("La fecha de nacimiento no puede ser en el futuro.");
+                return false;
+            }
+            else if (titulo == "Editar información")
+            {
+                if (selectedPerson != null && selectedPerson.HasParents())
+                {
+                    DateTime padresNacimiento = selectedPerson.GetOldestParentBirthdate();
+                    if (dateNacimiento.Value <= padresNacimiento.AddYears(12))
+                    {
+                        MostrarError("La fecha de nacimiento debe ser al menos 12 años posterior a la de los padres.");
+                        return false;
+                    }
+                }
+            }
+            else if (titulo == "Agregar padre")
+            {
+                if (selectedPerson != null)
+                {
+                    DateTime hijoNacimiento = selectedPerson.birthdate;
+                    if (dateNacimiento.Value >= hijoNacimiento.AddYears(-12))
+                    {
+                        MostrarError("La fecha de nacimiento del padre/madre debe ser al menos 12 años anterior a la del hijo/a.");
+                        return false;
+                    }
+                }
+            }
+            else if (titulo == "Agregar hijo")
+            {
+                if (selectedPerson != null)
+                {
+                    DateTime padreNacimiento = selectedPerson.birthdate;
+                    if (dateNacimiento.Value <= padreNacimiento.AddYears(12))
+                    {
+                        MostrarError("La fecha de nacimiento del hijo/a debe ser al menos 12 años posterior a la del padre/madre.");
+                        return false;
+                    }
+                }
+            }
+            else if (titulo == "Agregar pareja")
+            {
+                if (!selectedPerson.HasChildren()) return false;
+                if (selectedPerson.GetOldestChildBirthdate().AddYears(12) > dateNacimiento.Value)
+                {
+                    MostrarError("La fecha de nacimiento de la pareja no puede ser más de 12 años posterior a la del hijo/a mayor.");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool VerificarFechaFallecimiento()
+        {
+            if (dateFallecimiento.Value > DateTime.Now)
+            {
+                MostrarError("La fecha de fallecimiento no puede ser en el futuro.");
+                return false;
+            }
+
+            if (dateFallecimiento.Value <= dateNacimiento.Value)
+            {
+                MostrarError("La fecha de fallecimiento debe ser posterior a la de nacimiento.");
+                return false;
+            }
+
+            if (selectedPerson == null)
+                return false;
+
+            if (titulo == "Agregar padre")
+            {
+                DateTime nacimientoHijo = selectedPerson.birthdate;
+                if (dateFallecimiento.Value < nacimientoHijo.AddYears(-1))
+                {
+                    MostrarError("El padre/madre no puede haber fallecido más de un año antes del nacimiento del hijo/a.");
+                    return false;
+                }
+            }
+            else if (titulo == "Agregar hijo")
+            {
+                DateTime nacimientoPadre = selectedPerson.birthdate;
+                if (dateFallecimiento.Value <= nacimientoPadre.AddYears(1))
+                {
+                    MostrarError("El hijo/a debe fallecer al menos un año después del nacimiento del padre/madre.");
+                    return false;
+                }
+            }
+            else if (titulo == "Agregar pareja")
+            {
+                if (selectedPerson.HasChildren())
+                {
+                    DateTime hijoMayorNacimiento = selectedPerson.GetOldestChildBirthdate();
+                    if (dateFallecimiento.Value <= hijoMayorNacimiento.AddYears(1))
+                    {
+                        MostrarError("La pareja debe fallecer al menos un año después del nacimiento del hijo/a mayor.");
+                        return false;
+                    }
+                }
+            }
+
+            double edad = (dateFallecimiento.Value - dateNacimiento.Value).TotalDays / 365.25;
+            if (edad > 120)
+            {
+                MostrarError("La edad al fallecer no puede superar los 120 años.");
+                return false;
+            }
+            return true;
+        }
+
     }
 }

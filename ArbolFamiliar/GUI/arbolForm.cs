@@ -357,7 +357,7 @@ namespace ArbolFamiliar
         // Abre el formulario para crear una nueva persona
         private Person MostrarFormularioNuevaPersona(string titulo)
         {
-            using (var form = new PersonForm(titulo))
+            using (var form = new PersonForm(selectedPerson, titulo))
             {
                 if (form.ShowDialog() == DialogResult.OK && form.Confirmado)
                 {
@@ -380,7 +380,7 @@ namespace ArbolFamiliar
         {
             if (selectedPerson == null) return;
 
-            using (var form = new PersonForm(selectedPerson, titulo))
+            using (var form = new PersonForm(selectedPerson))
             {
                 if (form.ShowDialog() == DialogResult.OK && form.Confirmado)
                 {
@@ -464,6 +464,11 @@ namespace ArbolFamiliar
                 selectedPerson = null;
                 ActualizarGrafo();
             }
+        }
+
+        private void arbolForm_Load_1(object sender, EventArgs e)
+        {
+
         }
 
         private void BtnCenter_Click(object sender, EventArgs e)

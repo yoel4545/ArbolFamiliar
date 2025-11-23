@@ -93,6 +93,11 @@ namespace ArbolFamiliar
             if (child != null) children.Remove(child);
         }
 
+        public bool HasChildren()
+        {
+            return children.Any();
+        }
+
         // RELACIÓN: PAREJA
         public bool CanAddPartner(Person newPartner)
         {
@@ -157,6 +162,11 @@ namespace ArbolFamiliar
                 parents[0].AddPartner(parents[1]);
         }
 
+        public bool HasParents()
+        {
+            return parents[0] != null  || parents[1] != null;
+        }
+
         private void VincularConPartnerDePadre(Person parent)
         {
             var otro = parent.partner;
@@ -196,6 +206,25 @@ namespace ArbolFamiliar
         public Person Partner => partner;
         public string GetName => name;
         public string GetId => id;
+
+        public DateTime GetOldestParentBirthdate()
+        {
+            if (parents[0] != null && parents[1] == null) return parents[0].birthdate;
+            if (parents[0] == null && parents[1] != null) return parents[1].birthdate;
+            if (parents[0].birthdate < parents[1].birthdate) return parents[0].birthdate;
+            return parents[1].birthdate;
+        }
+
+        public DateTime GetOldestChildBirthdate()
+        {
+            DateTime oldest = children[0].birthdate;
+            foreach (var child in children)
+            {
+                if (child.birthdate < oldest)
+                    oldest = child.birthdate;
+            }
+            return oldest;
+        }
 
 
         // PRINT PROPIEDADES
