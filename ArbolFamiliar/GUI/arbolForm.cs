@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace ArbolFamiliar
@@ -42,6 +43,25 @@ namespace ArbolFamiliar
             this.MouseWheel += ArbolForm_MouseWheel;
             this.FormBorderStyle = FormBorderStyle.None;
             this.WindowState = FormWindowState.Maximized;
+
+            if (grafo.GetAllPersons() == null || !grafo.GetAllPersons().Any())
+            {
+                var personaRaiz = new Person(
+                    "Persona Raíz",
+                    "0001",
+                    new DateTime(1980, 1, 1),
+                    "", 
+                    9.93, -84.08,
+                    null
+                );
+
+                grafo.AddPerson(personaRaiz);
+
+                personaRaiz.x = 300; 
+                personaRaiz.y = 200;
+
+                Debug.WriteLine("Nodo raíz creado automáticamente");
+            }
 
             InitSidePanel();
         }
@@ -211,7 +231,6 @@ namespace ArbolFamiliar
 
         private void ArbolForm_Load(object sender, EventArgs e)
         {
-            grafo.CalculatePositions();
             Invalidate();
         }
 
@@ -371,7 +390,6 @@ namespace ArbolFamiliar
                     selectedPerson.deathDate = form.GetFechaFallecimiento();
                     selectedPerson.fotoPath = form.FotoPath;
 
-                    grafo.CalculatePositions();
                     Invalidate();
                     UpdateInfoPanel(); // refresca panel lateral
                 }
@@ -395,6 +413,11 @@ namespace ArbolFamiliar
             MostrarFormularioPersonaExistente("Editar información");
         }
 
+        private void arbolForm_Load_1(object sender, EventArgs e)
+        {
+
+        }
+
         private void BtnAddChild_Click(object sender, EventArgs e)
         {
             Debug.WriteLine("Pressed");
@@ -407,7 +430,6 @@ namespace ArbolFamiliar
             if (nuevo != null)
             {
                 grafo.AddChildren(selectedPerson, nuevo);
-                grafo.CalculatePositions();
                 Invalidate();
             }
         }
@@ -427,7 +449,6 @@ namespace ArbolFamiliar
             if (nuevoPadre != null)
             {
                 grafo.AddParent(selectedPerson, nuevoPadre);
-                grafo.CalculatePositions();
                 Invalidate();
             }
         }
@@ -447,8 +468,7 @@ namespace ArbolFamiliar
             var nuevaPareja = MostrarFormularioNuevaPersona("Agregar pareja");
             if (nuevaPareja != null)
             {
-                grafo.AddPatner(selectedPerson, nuevaPareja);
-                grafo.CalculatePositions();
+                grafo.AddPartner(selectedPerson, nuevaPareja);
                 Invalidate();
             }
         }
@@ -465,7 +485,6 @@ namespace ArbolFamiliar
             {
                 grafo.DeletePerson(selectedPerson);
                 selectedPerson = null;
-                grafo.CalculatePositions();
                 Invalidate();
             }
         }

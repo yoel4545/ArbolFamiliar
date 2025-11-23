@@ -7,19 +7,19 @@ namespace ArbolFamiliar
 {
     public class Person
     {
-        public string name { get; set; }
-        public string id { get; set; }
-        public DateTime birthdate { get; set; }
-        public DateTime? deathDate { get; set; }
-        public string fotoPath { get; set; }
-        public List<Person> children { get; set; }
-        public Person[] parents { get; set; }
-        public float x { get; set; } //Coordenada x para graficar
-        public float y { get; set; } //Coordenada y para graficar
-        public Person partner { get; set; }
-        public int level { get; set; }
-        public double Latitud { get; set; }
-        public double Longitud { get; set; }
+        public string name;
+        public string id;
+        public DateTime birthdate;
+        public DateTime? deathDate;
+        public string fotoPath;
+        public List<Person> children;
+        public Person[] parents;
+        public float x;  //Coordenada x para graficar
+        public float y; //Coordenada y para graficar
+        public Person partner;
+        public int level;
+        public double Latitud;
+        public double Longitud;
 
         public int Edad
         {
@@ -104,6 +104,19 @@ namespace ArbolFamiliar
                 }
             }
         }
+
+        public float GetRightMostChildX()
+        {
+            float rightMostX = float.MinValue;
+            foreach (var child in children)
+            {
+                if (child.x > rightMostX)
+                {
+                    rightMostX = child.x;
+                }
+            }
+            return rightMostX;
+        }
         private void ActualizarNivelYPropagar(Person persona, int nuevoNivel)
         {
             if (persona.level == nuevoNivel) return;
@@ -155,6 +168,7 @@ namespace ArbolFamiliar
                 if (!newPartner.children.Contains(hijo))
                 {
                     newPartner.children.Add(hijo);
+                    newPartner.AddPartnerToChild(hijo);
                 }
             }
 
@@ -169,6 +183,32 @@ namespace ArbolFamiliar
 
             // Mantener niveles coherentes
             newPartner.level = this.level;
+        }
+
+        public void AddPartnerToChild(Person child)
+        {
+            if (child == null) return;
+            if (child.Parents == null) return;
+
+            if (child.Parents[0] == this || child.Parents[1] == this)
+                return;
+
+            if (child.Parents[0] == null)
+                child.Parents[0] = this;
+            else if (child.Parents[1] == null)
+                child.Parents[1] = this;
+        }
+
+        public bool HasPartner()
+        {
+            if (partner != null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
 
@@ -234,8 +274,6 @@ namespace ArbolFamiliar
                 if (!otro.children.Contains(this))
                 {
                     otro.children.Add(this);
-                    // ✅ ACTUALIZADO: Usar el nuevo método para propagar niveles
-                    otro.ActualizarNivelYPropagar(this, otro.level + 1);
                 }
 
                 // agregar como padre si hay espacio y no está ya
@@ -251,6 +289,14 @@ namespace ArbolFamiliar
             {
                 parents[0].AddPartner(parents[1]);
             }
+        }
+
+        public int CountParents() //Cuenta la cantidad de padres que tiene la persona
+        {
+            int count = 0;
+            if (parents[0] != null) count++;
+            if (parents[1] != null) count++;
+            return count;
         }
 
 
@@ -299,6 +345,29 @@ namespace ArbolFamiliar
 
         public string GetId => id;
 
+        public float GetX => x;
+        public float GetY => y;
+
+        public float RightMostParent()
+        {
+            if (parents[0] != null)
+            {
+                if (parents[1] != null)
+                {
+                    Debug.WriteLine("Dos padres");
+                    return Math.Max(parents[0].x, parents[1].x);
+                }
+                else
+                {
+                    Debug.WriteLine("Un solo padre");
+                    return parents[0].x;
+                }
+            }
+            
+            return x;
+        }
+
+
         public string ToOwnPropertiesWithRelativesString()
         {
             // Propiedades propias
@@ -324,6 +393,16 @@ namespace ArbolFamiliar
                 $"Level: {level.ToString() ?? ""}\n" +
                 $"Pareja: {pareja}\n" +
                 $"Hijos: {hijos}\n";
+        }
+
+        public void setX(int x)
+        {
+            this.x = x;
+        }
+
+        public void setY(int y)
+        {
+            this.y = y;
         }
 
         public void PrintOwnPropertiesWithRelatives()
