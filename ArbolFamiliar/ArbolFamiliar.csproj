@@ -61,6 +61,9 @@
     <Compile Include="GUI\DistanciasForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="GUI\MapaSeleccion.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="logic\ArbolGenealogico.cs" />
     <Compile Include="GUI\Ayuda.cs">
       <SubType>Form</SubType>

@@ -15,6 +15,7 @@ namespace ArbolFamiliar
         public PictureBox picFoto;
         public Button btnSeleccionarFoto;
         public Person selectedPerson;
+        public Button btnSeleccionarUbicacion;
 
         // Propiedades de salida
         public string FotoPath { get; private set; } = "";
@@ -40,7 +41,7 @@ namespace ArbolFamiliar
         private void ConfigurarFormulario(string titulo)
         {
             this.Text = titulo;
-            this.Size = new Size(400, 500);
+            this.Size = new Size(400, 600);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -110,7 +111,16 @@ namespace ArbolFamiliar
             this.Controls.Add(btnSeleccionarFoto);
             y += 90;
 
-            // Coordenadas
+            btnSeleccionarUbicacion = new Button
+            {
+                Text = "Seleccionar Ubicación",
+                Location = new Point(20, y),
+                Size = new Size(200, 30)
+            };
+            btnSeleccionarUbicacion.Click += BtnSeleccionarUbicacion_Click;
+            this.Controls.Add(btnSeleccionarUbicacion);
+            y += 50;
+
             CrearLabel("Latitud:", 20, y);
             txtLatitud = CrearTextBox(120, y, "9");
             y += 35;
@@ -152,6 +162,21 @@ namespace ArbolFamiliar
                 {
                     MessageBox.Show("Error al cargar la imagen: " + ex.Message);
                     FotoPath = "";
+                }
+            }
+        }
+
+        private void BtnSeleccionarUbicacion_Click(object sender, EventArgs e)
+        {
+            // Abrir el mapa en modo selección
+            using (var mapaSeleccion = new MapaSeleccion())
+            {
+                // Mostrar el formulario de mapa como modal
+                if (mapaSeleccion.ShowDialog() == DialogResult.OK && mapaSeleccion.CoordenadasSeleccionadas)
+                {
+                    // Actualizar los TextBox con la posición seleccionada
+                    txtLatitud.Text = mapaSeleccion.LatitudSeleccionada.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    txtLongitud.Text = mapaSeleccion.LongitudSeleccionada.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 }
             }
         }
@@ -274,7 +299,12 @@ namespace ArbolFamiliar
             }
         }
 
-        // Metodos auxiliares
+        private void PersonForm_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        // Metodos auxiliares para crear controles
 
         private Label CrearLabel(string texto, int x, int y)
         {

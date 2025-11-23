@@ -11,16 +11,16 @@ namespace ArbolFamiliar
 {
     public partial class Mapa : Form
     {
-        private GMapControl mapa;
+        protected GMapControl mapa;
         private List<Person> personas;
-        private Button btnEstadisticas;
-        private Button button1;
+        protected Button btnEstadisticas;
+        protected Button button1;
         private GrafoGeografico grafoGeo;
         private GrafoGenealogico grafoGenealogico; 
 
-        public double LatitudSeleccionada { get; private set; }
-        public double LongitudSeleccionada { get; private set; }
-        public bool CoordenadasSeleccionadas { get; private set; }
+        public double LatitudSeleccionada { get; protected set; }
+        public double LongitudSeleccionada { get; protected set; }
+        public bool CoordenadasSeleccionadas { get; protected set; }
 
     
         public Mapa(List<Person> personasDelArbol, GrafoGenealogico grafoGenealogico)
@@ -367,5 +367,7 @@ namespace ArbolFamiliar
         {
             this.Close();
         }
+
+
     }
 }
