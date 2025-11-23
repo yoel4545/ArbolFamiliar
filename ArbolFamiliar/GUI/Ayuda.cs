@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace ArbolFamiliar
@@ -12,79 +13,118 @@ namespace ArbolFamiliar
         public Ayuda()
         {
             InitializeComponent();
+            ConfigurarEstiloVentana();
+            CrearInterfazAyuda();
+        }
+
+        private void ConfigurarEstiloVentana()
+        {
             this.FormBorderStyle = FormBorderStyle.None;
             this.WindowState = FormWindowState.Maximized;
-            CrearInterfazAyuda();
+            this.BackColor = ColorTranslator.FromHtml("#f5f3eb"); // tono pergamino
+            this.Font = new Font("Segoe UI", 10);
         }
 
         private void CrearInterfazAyuda()
         {
-            this.BackColor = Color.FromArgb(240, 245, 249);
+            // Fondo base y estilo general
+            this.BackColor = ColorTranslator.FromHtml("#f5f3eb");
 
-            // Título principal
+            // --- Título principal ---
             Label lblTitulo = new Label()
             {
                 Text = "Centro de Ayuda - Árbol Genealógico Familiar",
-                Font = new Font("Segoe UI", 18, FontStyle.Bold),
-                ForeColor = Color.FromArgb(44, 62, 80),
-                Location = new Point(50, 20),
-                AutoSize = true
+                Font = new Font("Garamond", 22, FontStyle.Bold),
+                ForeColor = ColorTranslator.FromHtml("#3f5030"),
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Top,
+                Height = 80
             };
+            this.Controls.Add(lblTitulo);
 
-            // TabControl para organizar secciones
+            // --- TabControl central ---
             tabControl = new TabControl()
             {
-                Location = new Point(50, 80),
-                Size = new Size(1400, 600),
-                Font = new Font("Segoe UI", 10)
+                Location = new Point(60, 100),
+                Size = new Size(1400, 620),
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                Appearance = TabAppearance.Normal
             };
 
-            // Crear pestañas
+            // Colores suaves para las pestañas
+            tabControl.DrawMode = TabDrawMode.OwnerDrawFixed;
+            tabControl.DrawItem += (s, e) =>
+            {
+                TabPage tab = tabControl.TabPages[e.Index];
+                Rectangle rect = e.Bounds;
+
+                bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+                Color backColor = selected ? ColorTranslator.FromHtml("#5b79a1") : Color.FromArgb(230, 230, 230);
+                Color foreColor = selected ? Color.White : ColorTranslator.FromHtml("#3f5030");
+
+                using (SolidBrush br = new SolidBrush(backColor))
+                    e.Graphics.FillRectangle(br, rect);
+
+                using (StringFormat sf = new StringFormat() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                    e.Graphics.DrawString(tab.Text, tabControl.Font, new SolidBrush(foreColor), rect, sf);
+            };
+
             CrearTabIntroduccion();
             CrearTabArbolGenealogico();
             CrearTabMapaInteractivo();
             CrearTabConsejos();
             CrearTabProblemas();
+            this.Controls.Add(tabControl);
 
-            // Botón cerrar
-            btnCerrar = new Button()
-            {
-                Text = "Cerrar Ayuda",
-                Location = new Point(650, 700),
-                Size = new Size(150, 40),
-                BackColor = Color.FromArgb(52, 152, 219),
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                FlatStyle = FlatStyle.Flat
-            };
-            btnCerrar.FlatAppearance.BorderSize = 0;
+            // --- Botón cerrar ---
+            btnCerrar = CrearBotonEstilizado("← Regresar", "#a14f4f", 650, 740, 160, 44);
             btnCerrar.Click += (s, e) => this.Close();
-
-            this.Controls.AddRange(new Control[] { lblTitulo, tabControl, btnCerrar });
+            this.Controls.Add(btnCerrar);
         }
+
+        private Button CrearBotonEstilizado(string texto, string colorHex, int x, int y, int w, int h)
+        {
+            Button b = new Button()
+            {
+                Text = texto,
+                Location = new Point(x, y),
+                Size = new Size(w, h),
+                BackColor = ColorTranslator.FromHtml(colorHex),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold)
+            };
+            b.FlatAppearance.BorderSize = 0;
+
+            b.Paint += (s, e) =>
+            {
+                Button btn = (Button)s;
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (GraphicsPath gp = new GraphicsPath())
+                {
+                    int r = 14;
+                    gp.AddArc(0, 0, r, r, 180, 90);
+                    gp.AddArc(btn.Width - r, 0, r, r, 270, 90);
+                    gp.AddArc(btn.Width - r, btn.Height - r, r, r, 0, 90);
+                    gp.AddArc(0, btn.Height - r, r, r, 90, 90);
+                    gp.CloseAllFigures();
+                    btn.Region = new Region(gp);
+                }
+            };
+            return b;
+        }
+
+        // --- Secciones del TabControl ---
 
         private void CrearTabIntroduccion()
         {
-            TabPage tabIntro = new TabPage("Introducción");
-
-            RichTextBox txtContenido = new RichTextBox()
-            {
-                Location = new Point(20, 20),
-                Size = new Size(1350, 540),
-                Font = new Font("Segoe UI", 11),
-                BackColor = Color.White,
-                BorderStyle = BorderStyle.None,
-                ReadOnly = true,
-                ScrollBars = RichTextBoxScrollBars.Vertical
-            };
-
-            string contenido = @"BIENVENIDO AL SISTEMA DE ÁRBOL GENEALÓGICO
+            AgregarPestaña("Introducción", @"BIENVENIDO AL SISTEMA DE ÁRBOL GENEALÓGICO
 
 Esta aplicación te permite crear y visualizar tu árbol genealógico de manera intuitiva, 
 con funcionalidades avanzadas de mapeo y análisis familiar.
 
 PRINCIPALES FUNCIONALIDADES:
-
 • Crear y gestionar un árbol genealógico
 • Visualizar relaciones familiares de forma gráfica
 • Ubicar familiares en mapas interactivos
@@ -92,208 +132,85 @@ PRINCIPALES FUNCIONALIDADES:
 • Analizar estadísticas geográficas
 
 ESTRUCTURA DE LA APLICACIÓN:
-
 1. PANTALLA PRINCIPAL - Navegación entre funcionalidades
 2. ÁRBOL GENEALÓGICO - Creación y edición de familiares
 3. MAPA INTERACTIVO - Visualización geográfica
 4. CENTRO DE AYUDA - Esta pantalla
 
 Siempre comienza desde el nodo 'N/A' que se crea automáticamente 
-y ve construyendo tu árbol desde ahí.";
-
-            txtContenido.Text = contenido;
-            tabIntro.Controls.Add(txtContenido);
-            tabControl.TabPages.Add(tabIntro);
+y ve construyendo tu árbol desde ahí.");
         }
 
         private void CrearTabArbolGenealogico()
         {
-            TabPage tabArbol = new TabPage("Árbol Genealógico");
-
-            RichTextBox txtContenido = new RichTextBox()
-            {
-                Location = new Point(20, 20),
-                Size = new Size(1350, 540),
-                Font = new Font("Segoe UI", 11),
-                BackColor = Color.White,
-                BorderStyle = BorderStyle.None,
-                ReadOnly = true,
-                ScrollBars = RichTextBoxScrollBars.Vertical
-            };
-
-            string contenido = @"CÓMO USAR EL ÁRBOL GENEALÓGICO
+            AgregarPestaña("Árbol Genealógico", @"CÓMO USAR EL ÁRBOL GENEALÓGICO
 
 PASO A PASO:
-
 1. INICIAR EL ÁRBOL:
-   • Al abrir el árbol genealógico, verás un nodo 'N/A'
-   • Este es tu punto de partida
-
+   • Al abrir el árbol, verás un nodo 'N/A' como punto de partida.
 2. SELECCIONAR PERSONAS:
-   • Haz CLICK sobre cualquier persona para seleccionarla
-   • La persona seleccionada se muestra en el panel lateral
-
+   • Haz CLICK sobre una persona para seleccionarla.
 3. AGREGAR FAMILIARES:
-   • Con una persona seleccionada, usa los botones del panel lateral:
-     - 'Agregar Hijo': Añade un hijo a la persona seleccionada
-     - 'Agregar Pareja': Añade una pareja a la persona seleccionada  
-     - 'Agregar Padre': Añade un padre a la persona seleccionada
-
+   • Usa los botones del panel lateral:
+     - 'Agregar Hijo', 'Agregar Pareja', 'Agregar Padre'.
 4. COMPLETAR INFORMACIÓN:
-   • Al agregar cualquier familiar, se abre un formulario
-   • Completa todos los campos obligatorios:
-     - Nombre completo
-     - Número de cédula
-     - Fecha de nacimiento
-     - Estado (vivo/fallecido)
-     - Coordenadas geográficas (usando PUNTO para decimales)
-     - Fotografía (opcional)
-
-5. NAVEGACIÓN EN EL ÁRBOL:
-   • ZOOM: Usa la rueda del mouse para acercar/alejar
-   • MOVIMIENTO: Arrastra con click izquierdo para moverte
-   • SELECCIÓN: Click en cualquier nodo para ver detalles
-
-CONSEJOS IMPORTANTES:
-
-• Las coordenadas usan PUNTO decimal (ej: 9.9347, -84.0875)
-• Puedes editar información existente con 'Cambiar Información'";
-
-            txtContenido.Text = contenido;
-            tabArbol.Controls.Add(txtContenido);
-            tabControl.TabPages.Add(tabArbol);
+   • Completa nombre, cédula, fechas y coordenadas.
+5. NAVEGACIÓN:
+   • ZOOM con la rueda del mouse.
+   • ARRÁSTRA el árbol con clic izquierdo.
+   • SELECCIONA nodos para ver detalles.");
         }
 
         private void CrearTabMapaInteractivo()
         {
-            TabPage tabMapa = new TabPage("Mapa Interactivo");
+            AgregarPestaña("Mapa Interactivo", @"MAPA INTERACTIVO DE FAMILIARES
 
-            RichTextBox txtContenido = new RichTextBox()
-            {
-                Location = new Point(20, 20),
-                Size = new Size(1350, 540),
-                Font = new Font("Segoe UI", 11),
-                BackColor = Color.White,
-                BorderStyle = BorderStyle.None,
-                ReadOnly = true,
-                ScrollBars = RichTextBoxScrollBars.Vertical
-            };
+FUNCIONALIDADES:
+• Cada familiar aparece como un marcador.
+• Las líneas conectan familiares y muestran distancias.
+• Click en un marcador → ver distancias con otros familiares.
 
-            string contenido = @"MAPA INTERACTIVO DE FAMILIARES
-
-FUNCIONALIDADES DEL MAPA:
-
-• VISUALIZACIÓN GEOGRÁFICA:
-  - Cada familiar aparece como un marcador en su ubicación
-  - Las líneas conectan a los familiares entre sí
-  - Las líneas muestran distancias en kilómetros
-
-• INTERACCIÓN CON MARCADORES:
-  - Haz CLICK en cualquier foto de familiar en el mapa
-  - Se abrirá una ventana con TODAS sus distancias a otros familiares
-  - Verás lista con nombres y distancias precisas
-
-• ESTADÍSTICAS GEOGRÁFICAS:
-  - Usa el botón 'Ver estadísticas' para obtener:
-     Par de familiares más cercano
-     Par de familiares más lejano  
-     Distancia promedio entre todos
-
-• NAVEGACIÓN EN EL MAPA:
-  - ZOOM: Rueda del mouse
-  - MOVIMIENTO: Arrastrar con click izquierdo
-  - CENTRADO: Automático en tus familiares";
-
-            txtContenido.Text = contenido;
-            tabMapa.Controls.Add(txtContenido);
-            tabControl.TabPages.Add(tabMapa);
+ESTADÍSTICAS:
+• Botón 'Ver estadísticas':
+  - Par más cercano y más lejano.
+  - Distancia promedio entre familiares.");
         }
 
         private void CrearTabConsejos()
         {
-            TabPage tabConsejos = new TabPage("Consejos");
+            AgregarPestaña("Consejos", @"CONSEJOS Y BUENAS PRÁCTICAS
 
-            RichTextBox txtContenido = new RichTextBox()
-            {
-                Location = new Point(20, 20),
-                Size = new Size(1350, 540),
-                Font = new Font("Segoe UI", 11),
-                BackColor = Color.White,
-                BorderStyle = BorderStyle.None,
-                ReadOnly = true,
-                ScrollBars = RichTextBoxScrollBars.Vertical
-            };
-
-            string contenido = @"CONSEJOS Y MEJORES PRÁCTICAS
-
-• FORMATO CORRECTO:
-  - Usa siempre PUNTO decimal: 9.9347, -84.0875
-  - Latitud: entre -90 y 90 (ej: 9.9347)
-  - Longitud: entre -180 y 180 (ej: -84.0875)";
-
-            txtContenido.Text = contenido;
-            tabConsejos.Controls.Add(txtContenido);
-            tabControl.TabPages.Add(tabConsejos);
+• Usa siempre punto decimal en coordenadas (9.9347, -84.0875)
+• Latitud: -90 a 90
+• Longitud: -180 a 180
+• Guarda los datos antes de cerrar la app.");
         }
 
         private void CrearTabProblemas()
         {
-            TabPage tabProblemas = new TabPage("Problemas Comunes");
+            AgregarPestaña("Problemas Comunes", @"SOLUCIÓN DE PROBLEMAS
 
-            RichTextBox txtContenido = new RichTextBox()
-            {
-                Location = new Point(20, 20),
-                Size = new Size(1350, 540),
-                Font = new Font("Segoe UI", 11),
-                BackColor = Color.White,
-                BorderStyle = BorderStyle.None,
-                ReadOnly = true,
-                ScrollBars = RichTextBoxScrollBars.Vertical
-            };
-
-            string contenido = @" SOLUCIÓN DE PROBLEMAS COMUNES
-
-ERROR: 'La cadena de entrada no tiene el formato correcto'
-• PROBLEMA: Formato incorrecto en coordenadas
-• SOLUCIÓN: Usa PUNTO decimal, no coma (9.9347, no 9,9347)
-
-ERROR: 'Latitud/Longitud inválida'
-• PROBLEMA: Valores fuera de rango
-• SOLUCIÓN: 
-  - Latitud debe estar entre -90 y 90
-  - Longitud entre -180 y 180
-
-PROBLEMA: No puedo agregar más padres
-• SOLUCIÓN: Cada persona puede tener máximo 2 padres
-• Verifica que no estés intentando agregar un tercer padre
-
-PROBLEMA: No puedo agregar pareja
-• SOLUCIÓN: 
-  - La persona ya tiene pareja (solo 1 permitida)
-
-PROBLEMA: El árbol se ve desordenado
-• SOLUCIÓN: 
-  - Usa la función de zoom y arrastre para reorganizar vista
-  - La aplicación ajusta automáticamente las posiciones
-
-PROBLEMA: No veo a todos en el mapa
-• SOLUCIÓN:
-  - Verifica que todos tengan coordenadas asignadas
-  - Coordenadas (0,0) no se muestran en el mapa
-
-
-
-La aplicación está diseñada para ser intuitiva, pero si encuentras 
-otros problemas, revisa que estés siguiendo los pasos correctamente.";
-
-            txtContenido.Text = contenido;
-            tabProblemas.Controls.Add(txtContenido);
-            tabControl.TabPages.Add(tabProblemas);
+• 'Formato incorrecto': usa punto decimal.
+• 'Latitud inválida': revisa rango de coordenadas.
+• No puedo agregar padre: máximo dos padres por persona.
+• No aparece en el mapa: debe tener coordenadas asignadas.");
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void AgregarPestaña(string titulo, string contenido)
         {
-            this.Close();
+            TabPage tab = new TabPage(titulo);
+            RichTextBox texto = new RichTextBox()
+            {
+                Text = contenido,
+                Font = new Font("Segoe UI", 11),
+                ReadOnly = true,
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                Dock = DockStyle.Fill,
+                ScrollBars = RichTextBoxScrollBars.Vertical
+            };
+            tab.Controls.Add(texto);
+            tabControl.TabPages.Add(tab);
         }
     }
 }

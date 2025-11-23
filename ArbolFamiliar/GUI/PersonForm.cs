@@ -3,12 +3,13 @@ using System.Drawing;
 using System.IO;
 using System.Globalization;
 using System.Windows.Forms;
+using System.Drawing.Drawing2D;
 
 namespace ArbolFamiliar
 {
     public partial class PersonForm : Form
     {
-        // Campos visuales
+        // Campos visuales (mismos nombres para no romper lógica externa)
         public TextBox txtNombre, txtId, txtLatitud, txtLongitud;
         public DateTimePicker dateNacimiento, dateFallecimiento;
         public CheckBox chkViva;
@@ -18,7 +19,7 @@ namespace ArbolFamiliar
         public Button btnSeleccionarUbicacion;
         public string titulo;
 
-        // Propiedades de salida
+        // Propiedades de salida (igual que antes)
         public string FotoPath { get; private set; } = "";
         public bool Confirmado { get; private set; } = false;
 
@@ -41,115 +42,130 @@ namespace ArbolFamiliar
             AddExistingInfo();
         }
 
-        // Configura las propiedades generales de la ventana
+        // Configura propiedades generales y estética
         private void ConfigurarFormulario(string titulo)
         {
             this.Text = titulo;
-            this.Size = new Size(400, 600);
+            this.Size = new Size(480, 680);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
+
+            // Fondo tipo pergamino suave para mantener la estética vintage
+            this.BackColor = ColorTranslator.FromHtml("#f5f3eb");
+
+            // Fuente base para controles (mantiene legibilidad)
+            this.Font = new Font("Segoe UI", 10, FontStyle.Regular);
         }
 
-        // Crea y posiciona todos los controles del formulario
+        // Crea y posiciona todos los controles del formulario (estética mejorada)
         private void CrearControles()
         {
-            int y = 20;
+            int y = 18;
+
+            // Título (Garamond para un toque clásico)
+            Label lblTitulo = new Label
+            {
+                Text = this.titulo.ToUpper(),
+                Font = new Font("Garamond", 18, FontStyle.Bold),
+                ForeColor = ColorTranslator.FromHtml("#3f5030"),
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Width = this.ClientSize.Width,
+                Location = new Point(0, y)
+            };
+            this.Controls.Add(lblTitulo);
+            y += 52;
 
             // Nombre
-            CrearLabel("Nombre:", 20, y);
-            txtNombre = CrearTextBox(120, y);
-            y += 35;
+            CrearLabel("Nombre:", 26, y);
+            txtNombre = CrearTextBox(160, y, "");
+            y += 40;
 
             // Cédula
-            CrearLabel("Cédula:", 20, y);
-            txtId = CrearTextBox(120, y);
-            y += 35;
+            CrearLabel("Cédula:", 26, y);
+            txtId = CrearTextBox(160, y, "");
+            y += 40;
 
             // Fecha de nacimiento
-            CrearLabel("Nacimiento:", 20, y);
-            dateNacimiento = CrearDatePicker(120, y, DateTime.Now);
+            CrearLabel("Nacimiento:", 26, y);
+            dateNacimiento = CrearDatePicker(160, y, DateTime.Now);
             this.Controls.Add(dateNacimiento);
-            y += 35;
+            y += 40;
 
             // Estado (viva o fallecida)
             chkViva = new CheckBox
             {
                 Text = "Persona viva",
-                Location = new Point(20, y),
-                Checked = true
+                Location = new Point(26, y),
+                Checked = true,
+                ForeColor = ColorTranslator.FromHtml("#3f5030"),
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                AutoSize = true
             };
             chkViva.CheckedChanged += ChkViva_CheckedChanged;
             this.Controls.Add(chkViva);
-            y += 35;
+            y += 36;
 
             // Fecha de fallecimiento
-            CrearLabel("Fallecimiento:", 20, y);
-            dateFallecimiento = CrearDatePicker(120, y, DateTime.Now);
+            CrearLabel("Fallecimiento:", 26, y);
+            dateFallecimiento = CrearDatePicker(160, y, DateTime.Now);
             dateFallecimiento.Enabled = false;
             this.Controls.Add(dateFallecimiento);
-            y += 40;
+            y += 30;
 
             // Foto
-            CrearLabel("Fotografía:", 20, y);
-            y += 25;
+            CrearLabel("Fotografía:", 26, y);
+            y += 40;
 
             picFoto = new PictureBox
             {
-                Location = new Point(20, y),
-                Size = new Size(80, 80),
+                Location = new Point(26, y),
+                Size = new Size(110, 110),
                 BorderStyle = BorderStyle.FixedSingle,
                 SizeMode = PictureBoxSizeMode.Zoom,
-                BackColor = Color.LightGray
+                BackColor = Color.FromArgb(235, 235, 235)
             };
             this.Controls.Add(picFoto);
 
-            btnSeleccionarFoto = new Button
-            {
-                Text = "Seleccionar...",
-                Location = new Point(110, y),
-                Size = new Size(100, 30)
-            };
+            btnSeleccionarFoto = CrearBoton("Seleccionar Foto", 160, y + 36, 160, 38, "#5b79a1");
             btnSeleccionarFoto.Click += BtnSeleccionarFoto_Click;
             this.Controls.Add(btnSeleccionarFoto);
-            y += 90;
+            y += 130;
 
-            btnSeleccionarUbicacion = new Button
-            {
-                Text = "Seleccionar Ubicación",
-                Location = new Point(20, y),
-                Size = new Size(200, 30)
-            };
+            // Ubicación
+            btnSeleccionarUbicacion = CrearBoton("Seleccionar Ubicación", 26, y, 220, 38, "#5b79a1");
             btnSeleccionarUbicacion.Click += BtnSeleccionarUbicacion_Click;
             this.Controls.Add(btnSeleccionarUbicacion);
-            y += 50;
+            y += 56;
 
-            CrearLabel("Latitud:", 20, y);
-            txtLatitud = CrearTextBox(120, y, "9");
-            y += 35;
+            // Lat / Lng
+            CrearLabel("Latitud:", 26, y);
+            txtLatitud = CrearTextBox(160, y, "9");
+            y += 40;
 
-            CrearLabel("Longitud:", 20, y);
-            txtLongitud = CrearTextBox(120, y, "-84");
-            y += 50;
+            CrearLabel("Longitud:", 26, y);
+            txtLongitud = CrearTextBox(160, y, "-84");
+            y += 54;
 
-            // Botones de acción
-            Button btnAceptar = CrearBoton("Aceptar", 80, y);
+            // Botones Aceptar / Cancelar
+            Button btnAceptar = CrearBoton("Aceptar", 110, y, 120, 44, "#3f5030");
             btnAceptar.Click += BtnAceptar_Click;
+            this.Controls.Add(btnAceptar);
 
-            Button btnCancelar = CrearBoton("Cancelar", 200, y);
+            Button btnCancelar = CrearBoton("Cancelar", 260, y, 120, 44, "#a14f4f");
             btnCancelar.Click += BtnCancelar_Click;
-
-            this.Controls.AddRange(new Control[] { btnAceptar, btnCancelar });
+            this.Controls.Add(btnCancelar);
         }
 
-        // Evento: habilita o deshabilita la fecha de fallecimiento según el estado
+        // Habilita o deshabilita fecha de fallecimiento al cambiar checkbox
         private void ChkViva_CheckedChanged(object sender, EventArgs e)
         {
             dateFallecimiento.Enabled = !chkViva.Checked;
         }
 
-        // Evento: selección de imagen de foto
+        // Selección de imagen de foto (igual lógica)
         private void BtnSeleccionarFoto_Click(object sender, EventArgs e)
         {
             OpenFileDialog dlg = new OpenFileDialog();
@@ -160,6 +176,7 @@ namespace ArbolFamiliar
                 FotoPath = dlg.FileName;
                 try
                 {
+                    // mantengo la lógica original de carga
                     picFoto.Image = Image.FromFile(FotoPath);
                 }
                 catch (Exception ex)
@@ -170,22 +187,20 @@ namespace ArbolFamiliar
             }
         }
 
+        // Abrir mapa en modo selección (misma lógica)
         private void BtnSeleccionarUbicacion_Click(object sender, EventArgs e)
         {
-            // Abrir el mapa en modo selección
             using (var mapaSeleccion = new MapaSeleccion())
             {
-                // Mostrar el formulario de mapa como modal
                 if (mapaSeleccion.ShowDialog() == DialogResult.OK && mapaSeleccion.CoordenadasSeleccionadas)
                 {
-                    // Actualizar los TextBox con la posición seleccionada
-                    txtLatitud.Text = mapaSeleccion.LatitudSeleccionada.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    txtLongitud.Text = mapaSeleccion.LongitudSeleccionada.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    txtLatitud.Text = mapaSeleccion.LatitudSeleccionada.ToString(CultureInfo.InvariantCulture);
+                    txtLongitud.Text = mapaSeleccion.LongitudSeleccionada.ToString(CultureInfo.InvariantCulture);
                 }
             }
         }
 
-        // Evento: aceptar formulario
+        // Aceptar: validar y cerrar con OK (misma lógica)
         private void BtnAceptar_Click(object sender, EventArgs e)
         {
             if (ValidarDatos())
@@ -196,7 +211,7 @@ namespace ArbolFamiliar
             }
         }
 
-        // Evento: cancelar formulario
+        // Cancelar: cerrar sin guardar
         private void BtnCancelar_Click(object sender, EventArgs e)
         {
             Confirmado = false;
@@ -204,7 +219,7 @@ namespace ArbolFamiliar
             this.Close();
         }
 
-        // Valida que los datos ingresados sean correctos antes de guardar
+        // Validaciones (idénticas, no cambié mensajes ni reglas)
         private bool ValidarDatos()
         {
             if (string.IsNullOrWhiteSpace(txtNombre.Text))
@@ -241,7 +256,7 @@ namespace ArbolFamiliar
             return true;
         }
 
-        // Muestra un mensaje de error genérico
+        // Mensaje de error (igual)
         private void MostrarError(string mensaje)
         {
             MessageBox.Show(mensaje, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -265,7 +280,7 @@ namespace ArbolFamiliar
             return double.Parse(txtLongitud.Text, CultureInfo.InvariantCulture);
         }
 
-        // Carga los datos de una persona existente al editar
+        // Carga la info existente (idéntico)
         private void AddExistingInfo()
         {
             if (selectedPerson == null) return;
@@ -299,18 +314,20 @@ namespace ArbolFamiliar
 
         private void PersonForm_Load(object sender, EventArgs e)
         {
-
+            // Intencionalmente vacío — ninguna inicialización extra necesaria
         }
 
-        // Metodos auxiliares para crear controles
+        // Métodos auxiliares para crear controles con estilo (no cambian lógica externa)
 
         private Label CrearLabel(string texto, int x, int y)
         {
             Label lbl = new Label
             {
                 Text = texto,
-                Location = new Point(x, y),
-                AutoSize = true
+                Location = new Point(x, y + 6),
+                AutoSize = true,
+                ForeColor = ColorTranslator.FromHtml("#3f5030"),
+                Font = new Font("Segoe UI", 10, FontStyle.Bold)
             };
             this.Controls.Add(lbl);
             return lbl;
@@ -321,8 +338,10 @@ namespace ArbolFamiliar
             TextBox txt = new TextBox
             {
                 Location = new Point(x, y),
-                Width = 200,
-                Text = valorInicial
+                Width = 260,
+                Text = valorInicial,
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                BackColor = Color.White
             };
             this.Controls.Add(txt);
             return txt;
@@ -333,24 +352,51 @@ namespace ArbolFamiliar
             DateTimePicker picker = new DateTimePicker
             {
                 Location = new Point(x, y),
-                Width = 200,
+                Width = 260,
                 Format = DateTimePickerFormat.Short,
-                MaxDate = maxDate
+                MaxDate = maxDate,
+                Font = new Font("Segoe UI", 10, FontStyle.Regular)
             };
             return picker;
         }
 
-        private Button CrearBoton(string texto, int x, int y)
+        // Crear botón estilizado: color de fondo, texto en blanco y bordes redondeados
+        private Button CrearBoton(string texto, int x, int y, int w, int h, string colorHex)
         {
             Button btn = new Button
             {
                 Text = texto,
                 Location = new Point(x, y),
-                Size = new Size(100, 35)
+                Size = new Size(w, h),
+                BackColor = ColorTranslator.FromHtml(colorHex),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat
             };
+            btn.FlatAppearance.BorderSize = 0;
+
+            // Para redondear, definimos la región en el evento Paint (compatible con versiones antiguas)
+            btn.Paint += delegate (object sender, PaintEventArgs e)
+            {
+                Button b = (Button)sender;
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (GraphicsPath gp = new GraphicsPath())
+                {
+                    int radius = Math.Min(14, Math.Min(b.Width / 4, b.Height / 2));
+                    gp.StartFigure();
+                    gp.AddArc(0, 0, radius, radius, 180, 90);
+                    gp.AddArc(b.Width - radius, 0, radius, radius, 270, 90);
+                    gp.AddArc(b.Width - radius, b.Height - radius, radius, radius, 0, 90);
+                    gp.AddArc(0, b.Height - radius, radius, radius, 90, 90);
+                    gp.CloseAllFigures();
+                    b.Region = new Region(gp);
+                }
+            };
+
             return btn;
         }
 
+        // Validaciones relacionadas con fechas (idénticas)
         private bool VerificarFechaNacimiento()
         {
             if (dateNacimiento.Value > DateTime.Now)
@@ -462,6 +508,5 @@ namespace ArbolFamiliar
             }
             return true;
         }
-
     }
 }

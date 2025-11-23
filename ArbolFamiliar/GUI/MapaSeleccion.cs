@@ -17,7 +17,7 @@ namespace ArbolFamiliar
         {
             // Ocultar botones heredados
             btnEstadisticas.Visible = false;
-            button1.Visible = false;
+
 
             ConfigurarSeleccion();
         }
@@ -76,6 +76,19 @@ namespace ArbolFamiliar
 
             DialogResult = DialogResult.OK;
             Close();
+        }
+
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+
+            this.btnEstadisticas.Location = new System.Drawing.Point(113, 100);
+            this.btnEstadisticas.Text = "";
+
+            this.ClientSize = new System.Drawing.Size(800, 600);
+            this.Name = "MapaSeleccion";
+            this.ResumeLayout(false);
+
         }
     }
 }
