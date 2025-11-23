@@ -115,23 +115,27 @@ namespace ArbolFamiliar
 
         public void AddPartner(Person newPartner)
         {
-
             if (!CanAddPartner(newPartner)) return;
 
             partner = newPartner;
             newPartner.partner = this;
 
-
             // Asegurar que ambas tengan listas inicializadas
             if (newPartner.children == null)
                 newPartner.children = new List<Person>();
 
-            // Copiar hijos de this a newPartner (sin duplicados)
+            // Copiar hijos existentes de this a newPartner (sin duplicados)
             foreach (var hijo in this.children)
             {
                 if (!newPartner.children.Contains(hijo))
                 {
                     newPartner.children.Add(hijo);
+
+                    // IMPORTANTE: También agregar a newPartner como padre del hijo
+                    if (hijo.CanAddParent())
+                    {
+                        hijo.AddParent(newPartner);
+                    }
                 }
             }
 
@@ -141,6 +145,12 @@ namespace ArbolFamiliar
                 if (!this.children.Contains(hijo))
                 {
                     this.children.Add(hijo);
+
+                    // IMPORTANTE: También agregar a this como padre del hijo
+                    if (hijo.CanAddParent())
+                    {
+                        hijo.AddParent(this);
+                    }
                 }
             }
 
