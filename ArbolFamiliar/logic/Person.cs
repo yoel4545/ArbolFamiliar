@@ -154,15 +154,6 @@ namespace ArbolFamiliar
             newPartner.level = this.level;
         }
 
-        private void SincronizarHijosConPareja(Person newPartner)
-        {
-            foreach (var hijo in this.children.Where(h => !newPartner.children.Contains(h)))
-                newPartner.children.Add(hijo);
-
-            foreach (var hijo in newPartner.children.Where(h => !this.children.Contains(h)))
-                this.children.Add(hijo);
-        }
-
         // RELACIÓN: PADRES
 
         public bool CanAddParent()
@@ -200,7 +191,6 @@ namespace ArbolFamiliar
         {
             return parents[0] != null  || parents[1] != null;
         }
-
         private void VincularConPartnerDePadre(Person parent)
         {
             var otro = parent.partner;
@@ -258,22 +248,6 @@ namespace ArbolFamiliar
                     oldest = child.birthdate;
             }
             return oldest;
-        }
-
-
-        // PRINT PROPIEDADES
-
-        public string ToOwnPropertiesWithRelativesString()
-        {
-            string pareja = partner?.GetName ?? "Ninguna";
-            string hijos = (children == null || !children.Any())
-                ? "Ninguno"
-                : string.Join(", ", children.Where(h => h != null).Select(h => h.GetName));
-
-            return $"Nombre: {name ?? ""}\n" +
-                   $"Level: {level}\n" +
-                   $"Pareja: {pareja}\n" +
-                   $"Hijos: {hijos}\n";
         }
     }
 }
