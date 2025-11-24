@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace ArbolFamiliar
@@ -13,16 +14,13 @@ namespace ArbolFamiliar
         private Point lastMouse;
         private bool dragging = false;
         private float zoom = 1.0f;
-
         private Person selectedPerson = null;
         public static GrafoGenealogico grafo;
-
         private Panel sidePanel;
         private Label infoLabel;
         private PictureBox profilePictureBox;
         private Button btnAddChild, btnAddPatner, btnAddParent, btnDelete, btnChangeInfo, btnBack, btnCenter;
         private Panel marcoContainer;
-
         private Image backgroundImage;
         private static Image marcoGlobal = null;
 
@@ -31,24 +29,24 @@ namespace ArbolFamiliar
             InitializeComponent();
             ConfigurarVentana();
 
-            // Cargar imagen de fondo (puedes cambiar la ruta a la tuya)
+            // Cargar imagen de fondo
             string fondoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "fondo_arbol.jpg");
             if (File.Exists(fondoPath))
             {
                 backgroundImage = Image.FromFile(fondoPath);
-                grafo = new GrafoGenealogico();
-                // AGREGAR ESTA LÍNEA ↓
-                grafo.CrearNodoInicial();
             }
 
+            // Inicializar grafo y nodo inicial
             if (grafo == null)
+            {
                 grafo = new GrafoGenealogico();
+                grafo.CrearNodoInicial(); // Asegura que haya al menos un nodo
+            }
 
             AsignarEventos();
             CrearPanelLateral();
         }
 
-        // Configura la ventana principal
         private void ConfigurarVentana()
         {
             DoubleBuffered = true;
@@ -57,7 +55,6 @@ namespace ArbolFamiliar
             WindowState = FormWindowState.Maximized;
         }
 
-        // Asocia eventos de carga, dibujo, y ratón
         private void AsignarEventos()
         {
             Load += ArbolForm_Load;
@@ -68,7 +65,6 @@ namespace ArbolFamiliar
             MouseWheel += ArbolForm_MouseWheel;
         }
 
-        // Crea el panel lateral con los botones e información
         private void CrearPanelLateral()
         {
             sidePanel = new Panel
@@ -84,11 +80,8 @@ namespace ArbolFamiliar
             CrearFotoPerfil();
             CrearInfoLabel();
             CrearBotonesInferiores();
-
             UpdateInfoPanel();
         }
-
-
 
         private void CrearBotonRegresar()
         {
@@ -111,19 +104,16 @@ namespace ArbolFamiliar
             sidePanel.Controls.Add(title);
         }
 
-        // Crea el recuadro para la foto de perfil
         private void CrearFotoPerfil()
         {
-            // Contenedor del marco y la foto
             marcoContainer = new Panel
             {
-                Size = new Size(190, 190), // un poco más grande que la foto
+                Size = new Size(190, 190),
                 Location = new Point((sidePanel.Width - 190) / 2, 100),
-                BackColor = Color.Transparent // no pintar fondo
+                BackColor = Color.Transparent
             };
             marcoContainer.Paint += MarcoContainer_Paint;
 
-            // PictureBox dentro del panel
             profilePictureBox = new PictureBox
             {
                 Size = new Size(160, 160),
@@ -134,22 +124,19 @@ namespace ArbolFamiliar
             };
             profilePictureBox.Paint += ProfilePictureBox_Paint;
 
-            // Agregar el PictureBox al contenedor y el contenedor al panel lateral
             marcoContainer.Controls.Add(profilePictureBox);
             sidePanel.Controls.Add(marcoContainer);
         }
 
-
-        // Crea la etiqueta donde se mostrará la información de la persona
         private void CrearInfoLabel()
         {
             infoLabel = new Label
             {
                 Text = "Ninguna persona seleccionada",
-                Font = new Font("Segoe UI", 14, FontStyle.Regular), 
+                Font = new Font("Segoe UI", 14, FontStyle.Regular),
                 ForeColor = Color.WhiteSmoke,
                 Location = new Point(20, 300),
-                Size = new Size(sidePanel.Width - 40, 180), 
+                Size = new Size(sidePanel.Width - 40, 180),
                 AutoSize = false,
                 TextAlign = ContentAlignment.TopLeft
             };
@@ -159,7 +146,7 @@ namespace ArbolFamiliar
         private void CrearBotonesInferiores()
         {
             int startY = 500;
-            int buttonWidth = sidePanel.Width - 60; 
+            int buttonWidth = sidePanel.Width - 60;
             int buttonHeight = 42;
             int spacing = 12;
 
@@ -172,7 +159,6 @@ namespace ArbolFamiliar
             btnAddParent = CrearBoton("Agregar Padre", 30, startY + 3 * (buttonHeight + spacing), buttonWidth, buttonHeight, azulSuave);
             btnAddPatner = CrearBoton("Agregar Pareja", 30, startY + 4 * (buttonHeight + spacing), buttonWidth, buttonHeight, azulSuave);
             btnDelete = CrearBoton("Eliminar", 30, startY + 5 * (buttonHeight + spacing), buttonWidth, buttonHeight, rojoSuave);
-            
 
             sidePanel.Controls.AddRange(new Control[] { btnChangeInfo, btnAddChild, btnAddParent, btnAddPatner, btnDelete, btnCenter });
 
@@ -183,7 +169,6 @@ namespace ArbolFamiliar
             btnDelete.Click += BtnDelete_Click;
             btnCenter.Click += BtnCenter_Click;
         }
-
 
         private Button CrearBoton(string texto, int x, int y, int w, int h, Color bg, Color? fg = null)
         {
@@ -201,19 +186,16 @@ namespace ArbolFamiliar
             return b;
         }
 
-        // Redondea los bordes del botón (solo estética)
         private void RedondearBoton(Button b, int radio)
         {
             GraphicsPath path = new GraphicsPath();
             Rectangle rect = new Rectangle(0, 0, b.Width, b.Height);
             int r = Math.Min(radio, Math.Min(b.Width / 2, b.Height / 2));
-
             path.AddArc(rect.X, rect.Y, r, r, 180, 90);
             path.AddArc(rect.Right - r, rect.Y, r, r, 270, 90);
             path.AddArc(rect.Right - r, rect.Bottom - r, r, r, 0, 90);
             path.AddArc(rect.X, rect.Bottom - r, r, r, 90, 90);
             path.CloseFigure();
-
             b.Region = new Region(path);
         }
 
@@ -223,10 +205,8 @@ namespace ArbolFamiliar
             Invalidate();
         }
 
-        // Dibuja el fondo y luego los nodos del árbol
         private void ArbolForm_Paint(object sender, PaintEventArgs e)
         {
-            // Dibuja la imagen de fondo si existe
             if (backgroundImage != null)
             {
                 e.Graphics.DrawImage(backgroundImage, new Rectangle(sidePanel.Width, 0, Width - sidePanel.Width, Height));
@@ -237,13 +217,12 @@ namespace ArbolFamiliar
             grafo.DrawNodes(e.Graphics);
         }
 
-        // Mueve el árbol con click y arrastre
         private void ArbolForm_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left && e.X > sidePanel.Width)
             {
-                Person res = DetectarPersonaClickeada(e);
-                if (res !=null) selectedPerson = res;
+                Person res = DetectClickedPerson(e);
+                if (res != null) selectedPerson = res;
                 UpdateInfoPanel();
                 dragging = true;
                 lastMouse = e.Location;
@@ -261,43 +240,35 @@ namespace ArbolFamiliar
 
         private void ArbolForm_MouseUp(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
-                dragging = false;
+            if (e.Button == MouseButtons.Left) dragging = false;
         }
 
-        // Cambia el zoom con la rueda del mouse
         private void ArbolForm_MouseWheel(object sender, MouseEventArgs e)
         {
             float oldZoom = zoom;
             zoom = e.Delta > 0 ? zoom * 1.1f : zoom / 1.1f;
             zoom = Math.Max(0.1f, Math.Min(zoom, 5.0f));
-
             panOffset.X = (int)(e.X - (e.X - panOffset.X) * (zoom / oldZoom));
             panOffset.Y = (int)(e.Y - (e.Y - panOffset.Y) * (zoom / oldZoom));
-
             Invalidate();
         }
 
-        
         private Person DetectClickedPerson(MouseEventArgs e)
         {
             float worldX = (e.X - panOffset.X - sidePanel.Width) / zoom;
             float worldY = (e.Y - panOffset.Y) / zoom;
-
             int radius = grafo.Radius;
 
-            // Buscar en TODOS los árboles (principal y sub-árboles)
             foreach (var p in grafo.GetAllPersons())
             {
                 float dx = worldX - (p.x + radius);
                 float dy = worldY - (p.y + radius);
-                if (Math.Sqrt(dx * dx + dy * dy) <= radius)
-                    return p;
+                if (Math.Sqrt(dx * dx + dy * dy) <= radius) return p;
             }
+
             return null;
         }
 
-        // Actualiza la información lateral cuando se selecciona una persona
         private void UpdateInfoPanel()
         {
             if (selectedPerson == null)
@@ -307,33 +278,23 @@ namespace ArbolFamiliar
                 return;
             }
 
-            // Construimos el texto de forma más legible
-            infoLabel.Text =
-                $"Nombre: {selectedPerson.GetName}\n" +
-                $"ID: {selectedPerson.GetId}\n" +
-                $"Edad: {selectedPerson.Edad}\n" +
-                $"Nacimiento: {selectedPerson.birthdate.ToShortDateString()}\n" +
-                (selectedPerson.deathDate.HasValue ? $"Fallecimiento: {selectedPerson.deathDate.Value.ToShortDateString()}\n" : "") +
-                $"Hijos: {selectedPerson.Children.Count}\n" +
-                $"Latitud: {selectedPerson.Latitud:F5}\n" +
-                $"Longitud: {selectedPerson.Longitud:F5}";
+            infoLabel.Text = $"Nombre: {selectedPerson.GetName}\n" +
+                             $"Cédula: {selectedPerson.GetId}\n" +
+                             $"Edad: {selectedPerson.Edad}\n" +
+                             $"Nacimiento: {selectedPerson.birthdate.ToShortDateString()}\n" +
+                             (selectedPerson.deathDate.HasValue ? $"Fallecimiento: {selectedPerson.deathDate.Value.ToShortDateString()}\n" : "") +
+                             $"Hijos: {selectedPerson.Children.Count}\n" +
+                             $"Latitud: {selectedPerson.Latitud:F5}\n" +
+                             $"Longitud: {selectedPerson.Longitud:F5}";
 
-            // Cargar la foto de perfil
             profilePictureBox.Image = CargarImagen(selectedPerson);
-
-            // Forzar el repintado para mostrar la imagen con el marco
             profilePictureBox.Invalidate();
         }
 
-
-        // Carga la foto de perfil de la persona, si existe
         private Image CargarImagen(Person persona)
         {
             string fotoPath = ObtenerFotoPath(persona);
-
-            if (string.IsNullOrEmpty(fotoPath) || !File.Exists(fotoPath))
-                return null;
-
+            if (string.IsNullOrEmpty(fotoPath) || !File.Exists(fotoPath)) return null;
             try
             {
                 using (var fs = new FileStream(fotoPath, FileMode.Open, FileAccess.Read))
@@ -341,31 +302,23 @@ namespace ArbolFamiliar
                     return Image.FromStream(fs);
                 }
             }
-            catch
-            {
-                return null;
-            }
+            catch { return null; }
         }
 
         private string ObtenerFotoPath(Person persona)
         {
             var tipo = persona.GetType();
-            var prop = tipo.GetProperty("FotoPath") ??
-                       tipo.GetProperty("fotoPath") ??
-                       tipo.GetProperty("Foto") ??
-                       tipo.GetProperty("PhotoPath") ??
-                       tipo.GetProperty("photoPath");
-
+            var prop = tipo.GetProperty("FotoPath") ?? tipo.GetProperty("fotoPath") ?? tipo.GetProperty("Foto") ?? tipo.GetProperty("PhotoPath") ?? tipo.GetProperty("photoPath");
             return prop != null ? prop.GetValue(persona) as string : null;
         }
 
-        // Abre el formulario para crear una nueva persona
         private Person MostrarFormularioNuevaPersona(string titulo)
         {
             using (var form = new PersonForm(selectedPerson, titulo))
             {
                 if (form.ShowDialog() == DialogResult.OK && form.Confirmado)
                 {
+                    Debug.WriteLine("Creando nueva persona desde el formulario.");
                     return new Person(
                         form.txtNombre.Text,
                         form.txtId.Text,
@@ -376,11 +329,11 @@ namespace ArbolFamiliar
                         form.GetFechaFallecimiento()
                     );
                 }
+                Debug.WriteLine("No se creó nueva persona desde el formulario.");
             }
             return null;
         }
 
-        // Abre el formulario para editar una persona existente
         private void MostrarFormularioPersonaExistente(string titulo)
         {
             if (selectedPerson == null) return;
@@ -404,16 +357,10 @@ namespace ArbolFamiliar
             }
         }
 
-        // Acciones de los botones
         private void BtnChangeInfo_Click(object sender, EventArgs e)
         {
             if (!VerificarSeleccion()) return;
             MostrarFormularioPersonaExistente("Editar información");
-        }
-
-        private void arbolForm_Load_1(object sender, EventArgs e)
-        {
-
         }
 
         private void BtnAddChild_Click(object sender, EventArgs e)
@@ -431,7 +378,6 @@ namespace ArbolFamiliar
         private void BtnAddParent_Click(object sender, EventArgs e)
         {
             if (!VerificarSeleccion()) return;
-
             if (!selectedPerson.CanAddParent())
             {
                 MessageBox.Show("Esta persona ya tiene el máximo de padres permitidos.");
@@ -449,7 +395,6 @@ namespace ArbolFamiliar
         private void BtnAddPatner_Click(object sender, EventArgs e)
         {
             if (!VerificarSeleccion()) return;
-
             if (selectedPerson.partner != null)
             {
                 MessageBox.Show("Esta persona ya tiene pareja.");
@@ -457,8 +402,10 @@ namespace ArbolFamiliar
             }
 
             var nuevaPareja = MostrarFormularioNuevaPersona("Agregar pareja");
+            Debug.WriteLine(nuevaPareja == null ? "No se creó nueva pareja." : "Nueva pareja creada.");
             if (nuevaPareja != null)
             {
+                Debug.WriteLine("Agregando pareja al grafo.");
                 grafo.AddPatner(selectedPerson, nuevaPareja);
                 ActualizarGrafo();
             }
@@ -468,17 +415,18 @@ namespace ArbolFamiliar
         {
             if (!VerificarSeleccion()) return;
 
+            if (grafo.GetAllPersons().Count() <= 1)
+            {
+                MessageBox.Show("No se puede eliminar el último nodo del árbol.");
+                return;
+            }
+
             if (MessageBox.Show("¿Eliminar a " + selectedPerson.GetName + "?", "Confirmar", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
                 grafo.DeletePerson(selectedPerson);
                 selectedPerson = null;
                 ActualizarGrafo();
             }
-        }
-
-        private void arbolForm_Load_1(object sender, EventArgs e)
-        {
-
         }
 
         private void BtnCenter_Click(object sender, EventArgs e)
@@ -520,16 +468,12 @@ namespace ArbolFamiliar
             }
         }
 
-
-
-        // Calcula el rectángulo ideal para centrar la imagen sin deformarla 
         private Rectangle GetBestFitRectangle(Image img, Rectangle container)
         {
             float ratioImg = (float)img.Width / img.Height;
             float ratioContainer = (float)container.Width / container.Height;
 
             int width, height;
-
             if (ratioImg > ratioContainer)
             {
                 width = container.Width;
@@ -540,9 +484,9 @@ namespace ArbolFamiliar
                 height = container.Height;
                 width = (int)(container.Height * ratioImg);
             }
+
             int x = container.X + (container.Width - width) / 2;
             int y = container.Y + (container.Height - height) / 2;
-
             return new Rectangle(x, y, width, height);
         }
 
@@ -551,18 +495,14 @@ namespace ArbolFamiliar
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
 
-            // Dibuja el marco un poco dentro del panel (ajustable)
             string marcoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "marco.png");
             if (File.Exists(marcoPath))
             {
                 using (Image marco = Image.FromFile(marcoPath))
                 {
-                    // Dibuja el marco ocupando todo el contenedor
                     e.Graphics.DrawImage(marco, new Rectangle(0, 0, ((Panel)sender).Width, ((Panel)sender).Height));
                 }
             }
         }
-
-
     }
 }

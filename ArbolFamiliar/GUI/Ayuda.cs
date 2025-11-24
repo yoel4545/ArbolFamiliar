@@ -27,7 +27,7 @@ namespace ArbolFamiliar
 
         private void CrearInterfazAyuda()
         {
-            // Fondo base y estilo general
+            // Fondo base
             this.BackColor = ColorTranslator.FromHtml("#f5f3eb");
 
             // --- Título principal ---
@@ -52,7 +52,7 @@ namespace ArbolFamiliar
                 Appearance = TabAppearance.Normal
             };
 
-            // Colores suaves para las pestañas
+            // Colores de pestañas
             tabControl.DrawMode = TabDrawMode.OwnerDrawFixed;
             tabControl.DrawItem += (s, e) =>
             {
@@ -70,11 +70,13 @@ namespace ArbolFamiliar
                     e.Graphics.DrawString(tab.Text, tabControl.Font, new SolidBrush(foreColor), rect, sf);
             };
 
+            // --- Crear pestañas ---
             CrearTabIntroduccion();
             CrearTabArbolGenealogico();
             CrearTabMapaInteractivo();
             CrearTabConsejos();
             CrearTabProblemas();
+
             this.Controls.Add(tabControl);
 
             // --- Botón cerrar ---
@@ -115,11 +117,11 @@ namespace ArbolFamiliar
             return b;
         }
 
-        // --- Secciones del TabControl ---
+        // --- Métodos de creación de pestañas ---
 
         private void CrearTabIntroduccion()
         {
-            AgregarPestaña("Introducción", @"BIENVENIDO AL SISTEMA DE ÁRBOL GENEALÓGICO
+            string contenido = @"BIENVENIDO AL SISTEMA DE ÁRBOL GENEALÓGICO
 
 Esta aplicación te permite crear y visualizar tu árbol genealógico de manera intuitiva, 
 con funcionalidades avanzadas de mapeo y análisis familiar.
@@ -138,12 +140,14 @@ ESTRUCTURA DE LA APLICACIÓN:
 4. CENTRO DE AYUDA - Esta pantalla
 
 Siempre comienza desde el nodo 'N/A' que se crea automáticamente 
-y ve construyendo tu árbol desde ahí.");
+y ve construyendo tu árbol desde ahí.";
+
+            AgregarPestaña("Introducción", contenido);
         }
 
         private void CrearTabArbolGenealogico()
         {
-            AgregarPestaña("Árbol Genealógico", @"CÓMO USAR EL ÁRBOL GENEALÓGICO
+            string contenido = @"CÓMO USAR EL ÁRBOL GENEALÓGICO
 
 PASO A PASO:
 1. INICIAR EL ÁRBOL:
@@ -158,12 +162,14 @@ PASO A PASO:
 5. NAVEGACIÓN:
    • ZOOM con la rueda del mouse.
    • ARRÁSTRA el árbol con clic izquierdo.
-   • SELECCIONA nodos para ver detalles.");
+   • SELECCIONA nodos para ver detalles.";
+
+            AgregarPestaña("Árbol Genealógico", contenido);
         }
 
         private void CrearTabMapaInteractivo()
         {
-            AgregarPestaña("Mapa Interactivo", @"MAPA INTERACTIVO DE FAMILIARES
+            string contenido = @"MAPA INTERACTIVO DE FAMILIARES
 
 FUNCIONALIDADES:
 • Cada familiar aparece como un marcador.
@@ -173,27 +179,51 @@ FUNCIONALIDADES:
 ESTADÍSTICAS:
 • Botón 'Ver estadísticas':
   - Par más cercano y más lejano.
-  - Distancia promedio entre familiares.");
+  - Distancia promedio entre familiares.";
+
+            AgregarPestaña("Mapa Interactivo", contenido);
         }
 
         private void CrearTabConsejos()
         {
-            AgregarPestaña("Consejos", @"CONSEJOS Y BUENAS PRÁCTICAS
+            string contenido = @"CONSEJOS Y BUENAS PRÁCTICAS
 
 • Usa siempre punto decimal en coordenadas (9.9347, -84.0875)
 • Latitud: -90 a 90
 • Longitud: -180 a 180
-• Guarda los datos antes de cerrar la app.");
+• Guarda los datos antes de cerrar la app.";
+
+            AgregarPestaña("Consejos", contenido);
         }
 
         private void CrearTabProblemas()
         {
-            AgregarPestaña("Problemas Comunes", @"SOLUCIÓN DE PROBLEMAS
+            string contenido = @"SOLUCIÓN DE PROBLEMAS COMUNES
 
-• 'Formato incorrecto': usa punto decimal.
-• 'Latitud inválida': revisa rango de coordenadas.
-• No puedo agregar padre: máximo dos padres por persona.
-• No aparece en el mapa: debe tener coordenadas asignadas.");
+ERROR: 'La cadena de entrada no tiene el formato correcto'
+• PROBLEMA: Formato incorrecto en coordenadas
+• SOLUCIÓN: Usa PUNTO decimal, no coma (9.9347, no 9,9347)
+
+ERROR: 'Latitud/Longitud inválida'
+• PROBLEMA: Valores fuera de rango
+• SOLUCIÓN: 
+  - Latitud debe estar entre -90 y 90
+  - Longitud entre -180 y 180
+
+PROBLEMA: No puedo agregar más padres
+• SOLUCIÓN: Cada persona puede tener máximo 2 padres
+
+PROBLEMA: No puedo agregar pareja
+• SOLUCIÓN: La persona ya tiene pareja (solo 1 permitida)
+
+PROBLEMA: El árbol se ve desordenado
+• SOLUCIÓN: Usa la función de zoom y arrastre para reorganizar vista
+
+PROBLEMA: No veo a todos en el mapa
+• SOLUCIÓN: Verifica que todos tengan coordenadas asignadas
+";
+
+            AgregarPestaña("Problemas Comunes", contenido);
         }
 
         private void AgregarPestaña(string titulo, string contenido)
@@ -211,47 +241,7 @@ ESTADÍSTICAS:
             };
             tab.Controls.Add(texto);
             tabControl.TabPages.Add(tab);
-
-            string contenido = @" SOLUCIÓN DE PROBLEMAS COMUNES
-
-ERROR: 'La cadena de entrada no tiene el formato correcto'
-• PROBLEMA: Formato incorrecto en coordenadas
-• SOLUCIÓN: Usa PUNTO decimal, no coma (9.9347, no 9,9347)
-
-ERROR: 'Latitud/Longitud inválida'
-• PROBLEMA: Valores fuera de rango
-• SOLUCIÓN: 
-  - Latitud debe estar entre -90 y 90
-  - Longitud entre -180 y 180
-
-PROBLEMA: No puedo agregar más padres
-• SOLUCIÓN: Cada persona puede tener máximo 2 padres
-• Verifica que no estés intentando agregar un tercer padre
-
-PROBLEMA: No puedo agregar pareja
-• SOLUCIÓN: 
-  - La persona ya tiene pareja (solo 1 permitida)
-
-PROBLEMA: El árbol se ve desordenado
-• SOLUCIÓN: 
-  - Usa la función de zoom y arrastre para reorganizar vista
-  - La aplicación ajusta automáticamente las posiciones
-
-PROBLEMA: No veo a todos en el mapa
-• SOLUCIÓN:
-  - Verifica que todos tengan coordenadas asignadas
-  - Coordenadas (0,0) no se muestran en el mapa
-
-
-
-La aplicación está diseñada para ser intuitiva, pero si encuentras 
-otros problemas, revisa que estés siguiendo los pasos correctamente.";
-
-            txtContenido.Text = contenido;
-            tabProblemas.Controls.Add(txtContenido);
-            tabControl.TabPages.Add(tabProblemas);
         }
-
 
         private void Ayuda_Load(object sender, EventArgs e)
         {

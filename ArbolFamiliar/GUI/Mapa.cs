@@ -264,17 +264,22 @@ namespace ArbolFamiliar
         {
             if (personas == null || personas.Count == 0) return;
 
-            var latitudes = personas.Where(p => p.Latitud != 0).Select(p => p.Latitud);
-            var longitudes = personas.Where(p => p.Longitud != 0).Select(p => p.Longitud);
+            var latitudes = personas.Where(p => p.Latitud != 0).Select(p => p.Latitud).ToList();
+            var longitudes = personas.Where(p => p.Longitud != 0).Select(p => p.Longitud).ToList();
 
             if (!latitudes.Any() || !longitudes.Any()) return;
 
-            if (minLat != double.MaxValue)
-            {
-                var centerLat = (minLat + maxLat) / 2;
-                var centerLng = (minLng + maxLng) / 2;
-                mapa.Position = new PointLatLng(centerLat, centerLng);
-            }
+            // Calcular mínimo y máximo de latitudes y longitudes
+            double minLat = latitudes.Min();
+            double maxLat = latitudes.Max();
+            double minLng = longitudes.Min();
+            double maxLng = longitudes.Max();
+
+            // Calcular centro
+            double centerLat = (minLat + maxLat) / 2;
+            double centerLng = (minLng + maxLng) / 2;
+
+            mapa.Position = new PointLatLng(centerLat, centerLng);
         }
 
         private void Mapa_Load(object sender, EventArgs e)

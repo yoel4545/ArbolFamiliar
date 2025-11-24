@@ -36,7 +36,6 @@
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.ClientSize = new System.Drawing.Size(1153, 714);
             this.Name = "arbolForm";
-            this.Load += new System.EventHandler(this.arbolForm_Load_1);
             this.ResumeLayout(false);
 
         }

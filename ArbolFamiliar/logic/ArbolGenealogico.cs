@@ -252,7 +252,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             var keys = new List<Person>(adyacencia.Keys);
             foreach (var k in keys)
             {
-                adyacencia[k].Remove(p);
+                adyacencia[k].Remove(p); 
                 k.Children.Remove(p);
             }
         }
@@ -1173,22 +1173,3 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
     }
 }
 
-
-
-
-
-//regresar
-
-
-//regresar
-//regresar
-
-//regresar
-//regresar
-//regresar
-//regresar
-//regresar
-//regresar
-//regresar
-//regresar
-//regresar

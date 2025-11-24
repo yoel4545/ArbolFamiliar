@@ -4,6 +4,7 @@ using System.IO;
 using System.Globalization;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
+using System.Diagnostics;
 
 namespace ArbolFamiliar
 {
@@ -205,10 +206,12 @@ namespace ArbolFamiliar
         {
             if (ValidarDatos())
             {
+                Debug.WriteLine("Datos validados correctamente.");
                 Confirmado = true;
                 this.DialogResult = DialogResult.OK;
                 this.Close();
             }
+            Debug.WriteLine("Validación fallida.");
         }
 
         // Cancelar: cerrar sin guardar
@@ -248,7 +251,11 @@ namespace ArbolFamiliar
             }
 
             if (!VerificarFechaNacimiento())
+            {
+                Debug.WriteLine("Fecha de nacimiento inválida.");
                 return false;
+            }
+                
 
             if (!chkViva.Checked && !VerificarFechaFallecimiento())
                 return false;
@@ -266,18 +273,6 @@ namespace ArbolFamiliar
         public DateTime? GetFechaFallecimiento()
         {
             return chkViva.Checked ? (DateTime?)null : dateFallecimiento.Value;
-        }
-
-        // Devuelve la latitud en formato numérico
-        public double GetLatitud()
-        {
-            return double.Parse(txtLatitud.Text, CultureInfo.InvariantCulture);
-        }
-
-        // Devuelve la longitud en formato numérico
-        public double GetLongitud()
-        {
-            return double.Parse(txtLongitud.Text, CultureInfo.InvariantCulture);
         }
 
         // Carga la info existente (idéntico)
@@ -345,6 +340,11 @@ namespace ArbolFamiliar
             };
             this.Controls.Add(txt);
             return txt;
+        }
+
+        private void PersonForm_Load(object sender, EventArgs e)
+        {
+
         }
 
         private DateTimePicker CrearDatePicker(int x, int y, DateTime maxDate)
@@ -442,18 +442,25 @@ namespace ArbolFamiliar
             }
             else if (titulo == "Agregar pareja")
             {
-                if (!selectedPerson.HasChildren()) return false;
-                if (selectedPerson.GetOldestChildBirthdate().AddYears(12) > dateNacimiento.Value)
+                // Solo validar la fecha respecto a hijos si existen
+                if (selectedPerson.HasChildren())
                 {
-                    MostrarError("La fecha de nacimiento de la pareja no puede ser más de 12 años posterior a la del hijo/a mayor.");
-                    return false;
+                    DateTime hijoMayor = selectedPerson.GetOldestChildBirthdate();
+                    if (dateNacimiento.Value > hijoMayor.AddYears(12))
+                    {
+                        MostrarError("La fecha de nacimiento de la pareja no puede ser más de 12 años posterior a la del hijo/a mayor.");
+                        return false;
+                    }
                 }
+                // Si no hay hijos, no hay restricción de fecha
             }
             return true;
         }
 
         private bool VerificarFechaFallecimiento()
         {
+            Debug.WriteLine("Validando fecha de fallecimiento...");
+            Debug.WriteLine(titulo);
             if (dateFallecimiento.Value > DateTime.Now)
             {
                 MostrarError("La fecha de fallecimiento no puede ser en el futuro.");
@@ -489,15 +496,17 @@ namespace ArbolFamiliar
             }
             else if (titulo == "Agregar pareja")
             {
+                Debug.WriteLine("Validando fecha de fallecimiento para pareja...");
                 if (selectedPerson.HasChildren())
                 {
-                    DateTime hijoMayorNacimiento = selectedPerson.GetOldestChildBirthdate();
-                    if (dateFallecimiento.Value <= hijoMayorNacimiento.AddYears(1))
+                    DateTime hijoMayor = selectedPerson.GetOldestChildBirthdate();
+                    if (dateNacimiento.Value > hijoMayor.AddYears(12))
                     {
-                        MostrarError("La pareja debe fallecer al menos un año después del nacimiento del hijo/a mayor.");
+                        MostrarError("La fecha de nacimiento de la pareja no puede ser más de 12 años posterior a la del hijo/a mayor.");
                         return false;
                     }
                 }
+                // Si no hay hijos, no hay restricción de fecha
             }
 
             double edad = (dateFallecimiento.Value - dateNacimiento.Value).TotalDays / 365.25;
