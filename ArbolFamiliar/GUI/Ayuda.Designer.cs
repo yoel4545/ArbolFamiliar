@@ -27,10 +27,9 @@
             this.Controls.Add(this.button1);
             this.Name = "Ayuda";
             this.Text = "Ayuda";
+            this.Load += new System.EventHandler(this.Ayuda_Load);
             this.ResumeLayout(false);
 
         }
-
-        private System.Windows.Forms.Button button1;
     }
 }

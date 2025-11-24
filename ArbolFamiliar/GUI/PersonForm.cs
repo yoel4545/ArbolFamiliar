@@ -312,10 +312,10 @@ namespace ArbolFamiliar
             }
         }
 
-        private void PersonForm_Load(object sender, EventArgs e)
-        {
-            // Intencionalmente vacío — ninguna inicialización extra necesaria
-        }
+        public double GetLatitud() => double.Parse(txtLatitud.Text, System.Globalization.CultureInfo.InvariantCulture);
+        public double GetLongitud() => double.Parse(txtLongitud.Text, System.Globalization.CultureInfo.InvariantCulture);
+
+        
 
         // Métodos auxiliares para crear controles con estilo (no cambian lógica externa)
 

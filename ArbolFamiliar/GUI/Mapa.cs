@@ -269,9 +269,22 @@ namespace ArbolFamiliar
 
             if (!latitudes.Any() || !longitudes.Any()) return;
 
-            double centerLat = (latitudes.Min() + latitudes.Max()) / 2;
-            double centerLng = (longitudes.Min() + longitudes.Max()) / 2;
-            mapa.Position = new PointLatLng(centerLat, centerLng);
+            if (minLat != double.MaxValue)
+            {
+                var centerLat = (minLat + maxLat) / 2;
+                var centerLng = (minLng + maxLng) / 2;
+                mapa.Position = new PointLatLng(centerLat, centerLng);
+            }
+        }
+
+        private void Mapa_Load(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
     }
 }

@@ -14,6 +14,8 @@ namespace ArbolFamiliar
         public string fotoPath { get; set; }
         public double Latitud { get; set; }
         public double Longitud { get; set; }
+        public bool EsSubArbol { get; set; }
+        public Person RaizSubArbol { get; set; }
 
         // RELACIONES FAMILIARES 
 
@@ -70,7 +72,7 @@ namespace ArbolFamiliar
             foreach (var hijo in persona.children)
                 ActualizarNivelYPropagar(hijo, nuevoNivel + 1);
 
-            // Mantener coherencia con pareja
+            //  ACTUALIZAR también a la pareja para mantener consistencia
             if (persona.partner != null && persona.partner.level != nuevoNivel)
                 persona.partner.level = nuevoNivel;
         }
@@ -114,7 +116,41 @@ namespace ArbolFamiliar
             partner = newPartner;
             newPartner.partner = this;
 
-            SincronizarHijosConPareja(newPartner);
+            // Asegurar que ambas tengan listas inicializadas
+            if (newPartner.children == null)
+                newPartner.children = new List<Person>();
+
+            // Copiar hijos existentes de this a newPartner (sin duplicados)
+            foreach (var hijo in this.children)
+            {
+                if (!newPartner.children.Contains(hijo))
+                {
+                    newPartner.children.Add(hijo);
+
+                    // IMPORTANTE: También agregar a newPartner como padre del hijo
+                    if (hijo.CanAddParent())
+                    {
+                        hijo.AddParent(newPartner);
+                    }
+                }
+            }
+
+            // Copiar hijos de newPartner a this (sin duplicados)
+            foreach (var hijo in newPartner.children)
+            {
+                if (!this.children.Contains(hijo))
+                {
+                    this.children.Add(hijo);
+
+                    // IMPORTANTE: También agregar a this como padre del hijo
+                    if (hijo.CanAddParent())
+                    {
+                        hijo.AddParent(this);
+                    }
+                }
+            }
+
+            // Mantener niveles coherentes
             newPartner.level = this.level;
         }
 
@@ -131,10 +167,8 @@ namespace ArbolFamiliar
 
         public bool CanAddParent()
         {
-            // Si el partner tiene ya padres, no se puede
-            if (partner?.parents.Any(p => p != null) == true) return false;
-
-            // Solo máximo dos padres
+            // PERMITIR agregar padres incluso si tiene pareja
+            // Solo verificar que no tenga ya 2 padres
             return !(parents[0] != null && parents[1] != null);
         }
 
@@ -146,7 +180,7 @@ namespace ArbolFamiliar
             if (parents[0] == null) parents[0] = parent;
             else if (parents[1] == null) parents[1] = parent;
 
-            // Agregar hijo al padre
+            // Agregar hijo al padre y propagar niveles
             if (!parent.children.Contains(this))
             {
                 parent.children.Add(this);
@@ -157,7 +191,7 @@ namespace ArbolFamiliar
             if (parent.partner != null)
                 VincularConPartnerDePadre(parent);
 
-            // Asegurar que los dos padres sean pareja
+            // Si ya hay ambos padres, asegurarse que sean pareja
             if (parents[0] != null && parents[1] != null && parents[0].partner != parents[1])
                 parents[0].AddPartner(parents[1]);
         }

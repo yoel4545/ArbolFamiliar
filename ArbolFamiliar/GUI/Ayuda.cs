@@ -211,6 +211,51 @@ ESTADÍSTICAS:
             };
             tab.Controls.Add(texto);
             tabControl.TabPages.Add(tab);
+
+            string contenido = @" SOLUCIÓN DE PROBLEMAS COMUNES
+
+ERROR: 'La cadena de entrada no tiene el formato correcto'
+• PROBLEMA: Formato incorrecto en coordenadas
+• SOLUCIÓN: Usa PUNTO decimal, no coma (9.9347, no 9,9347)
+
+ERROR: 'Latitud/Longitud inválida'
+• PROBLEMA: Valores fuera de rango
+• SOLUCIÓN: 
+  - Latitud debe estar entre -90 y 90
+  - Longitud entre -180 y 180
+
+PROBLEMA: No puedo agregar más padres
+• SOLUCIÓN: Cada persona puede tener máximo 2 padres
+• Verifica que no estés intentando agregar un tercer padre
+
+PROBLEMA: No puedo agregar pareja
+• SOLUCIÓN: 
+  - La persona ya tiene pareja (solo 1 permitida)
+
+PROBLEMA: El árbol se ve desordenado
+• SOLUCIÓN: 
+  - Usa la función de zoom y arrastre para reorganizar vista
+  - La aplicación ajusta automáticamente las posiciones
+
+PROBLEMA: No veo a todos en el mapa
+• SOLUCIÓN:
+  - Verifica que todos tengan coordenadas asignadas
+  - Coordenadas (0,0) no se muestran en el mapa
+
+
+
+La aplicación está diseñada para ser intuitiva, pero si encuentras 
+otros problemas, revisa que estés siguiendo los pasos correctamente.";
+
+            txtContenido.Text = contenido;
+            tabProblemas.Controls.Add(txtContenido);
+            tabControl.TabPages.Add(tabProblemas);
+        }
+
+
+        private void Ayuda_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }
