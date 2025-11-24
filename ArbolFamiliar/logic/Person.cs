@@ -72,7 +72,7 @@ namespace ArbolFamiliar
             foreach (var hijo in persona.children)
                 ActualizarNivelYPropagar(hijo, nuevoNivel + 1);
 
-            //  ACTUALIZAR también a la pareja para mantener consistencia
+            //  actualizar también a la pareja para mantener consistencia
             if (persona.partner != null && persona.partner.level != nuevoNivel)
                 persona.partner.level = nuevoNivel;
         }

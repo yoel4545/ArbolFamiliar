@@ -14,7 +14,7 @@ namespace ArbolFamiliar
         private Dictionary<Person, List<Person>> adyacencia;
         private int horizontalSpacing;
         private int verticalSpacing;
-        private int radius; // Radio de los nodos circulares
+        private int radius; 
         private float minGap = 60f;
         public GrafoGenealogico()
         {
@@ -29,13 +29,13 @@ namespace ArbolFamiliar
             {
                 Person p = new Person("N/A", "0000", DateTime.Now, "");
 
-                // Agregar DIRECTAMENTE sin llamar CalculatePositions()
+                // Agregar directamente sin llamar CalculatePositions()
                 if (!adyacencia.ContainsKey(p))
                     adyacencia[p] = new List<Person>();
 
                 nodoInicialCreado = true;
 
-                // Calcular posiciones SOLO UNA VEZ al final
+                // Calcular posiciones una vez al final
                 CalculatePositions();
             }
         }
@@ -314,7 +314,7 @@ namespace ArbolFamiliar
         {
             try
             {
-                // VALIDACIÓN INICIAL CRÍTICA
+                // validación inicial
                 if (adyacencia == null)
                     adyacencia = new Dictionary<Person, List<Person>>();
 
@@ -335,7 +335,7 @@ namespace ArbolFamiliar
                     if (float.IsNaN(persona.y) || float.IsInfinity(persona.y))
                         persona.y = 0;
 
-                    // ELIMINAR flags de sub-árbol
+                    // eliminar flags de sub-árbol
                     persona.EsSubArbol = false;
                     persona.RaizSubArbol = null;
                 }
@@ -450,7 +450,7 @@ namespace ArbolFamiliar
                     compLevel[i] = assigned;
                 }
 
-                // --- Asignar niveles a cada persona ---
+                //  Asignar niveles a cada persona 
                 foreach (var kv in compMembers)
                 {
                     var rep = kv.Key;
@@ -524,7 +524,7 @@ namespace ArbolFamiliar
 
                         if (person.Partner != null && persons.Contains(person.Partner))
                         {
-                            // DECIDIR en qué lado poner a cada uno de la pareja
+                            // decir en qué lado poner a cada uno de la pareja
                             int sidePerson = DeterminarLadoOptimo(person, persons);
                             int sidePartner = (sidePerson == 0) ? 1 : 0;
 
@@ -574,7 +574,7 @@ namespace ArbolFamiliar
                     }
                 }
 
-                // 2 ANTI-COLISIÓN MEJORADA
+                // 2 ANTI-COLISIÓN 
 
                 var nodesByLevel = allNodes
                     .GroupBy(p => p.GetLevel)
@@ -648,7 +648,7 @@ namespace ArbolFamiliar
 
             int diameter = radius * 2;
 
-            // === 1️ VERIFICAR Y LIMPIAR COORDENADAS INVÁLIDAS ===
+            //  1️ VERIFICAR Y LIMPIAR COORDENADAS INVÁLIDAS 
             foreach (var persona in adyacencia.Keys)
             {
                 if (float.IsNaN(persona.x) || float.IsInfinity(persona.x) ||
@@ -659,7 +659,7 @@ namespace ArbolFamiliar
                 }
             }
 
-            // === 2️ SOLO UN SISTEMA DE CONEXIONES - LÍNEAS DIRECTAS ===
+            //  2️ SOLO UN SISTEMA DE CONEXIONES - LÍNEAS DIRECTAS 
             foreach (var kvp in adyacencia)
             {
                 var padre = kvp.Key;
@@ -702,8 +702,7 @@ namespace ArbolFamiliar
                         // Usar línea curva para mejor apariencia
                         DibujarLineaCurva(g, linea, xPadre, yPadre, xHijo, yHijo);
 
-                        // Opcional: dibujar flecha para indicar dirección
-                        // DibujarFlecha(g, linea, xPadre, yPadre, xHijo, yHijo);
+                       
                     }
                     catch (Exception ex)
                     {
@@ -712,7 +711,7 @@ namespace ArbolFamiliar
                 }
             }
 
-            // === 3️ Dibujar líneas entre parejas ===
+            //  3️ Dibujar líneas entre parejas 
             foreach (var kvp in adyacencia)
             {
                 var persona = kvp.Key;
@@ -746,7 +745,7 @@ namespace ArbolFamiliar
                 }
             }
 
-            // === 4️⃣ Dibujar los NODOS ===
+            //  4️⃣ Dibujar los NODOS 
             foreach (var kvp in adyacencia)
             {
                 var p = kvp.Key;
@@ -788,7 +787,7 @@ namespace ArbolFamiliar
         
         private int DeterminarLadoOptimo(Person persona, List<Person> personasNivel)
         {
-            // ESTRATEGIA MEJORADA: Analizar toda la estructura familiar
+            // Analizar toda la estructura familiar
 
             // 1. Si tiene pareja y la pareja ya está posicionada, usar el lado opuesto
             if (persona.Partner != null && persona.Partner.x != 0)
@@ -853,7 +852,7 @@ namespace ArbolFamiliar
         {
             try
             {
-                // LÍNEAS MÁS RECTAS - menos curvas
+                
                 float controlX1, controlY1, controlX2, controlY2;
 
                 float distanciaX = Math.Abs(x1 - x2);
@@ -861,8 +860,8 @@ namespace ArbolFamiliar
 
                 if (distanciaX > distanciaY)
                 {
-                    // Conexión más horizontal - curva MUY suave
-                    float factorCurva = 0.1f; // Reducido de 0.3f a 0.1f para menos curva
+                    // Conexión más horizontal 
+                    float factorCurva = 0.1f;
                     controlX1 = x1 + (x2 - x1) * factorCurva;
                     controlY1 = y1;
                     controlX2 = x2 - (x2 - x1) * factorCurva;
@@ -870,8 +869,8 @@ namespace ArbolFamiliar
                 }
                 else
                 {
-                    // Conexión más vertical - curva MUY suave
-                    float factorCurva = 0.1f; // Reducido de 0.3f a 0.1f para menos curva
+                    // Conexión más vertical 
+                    float factorCurva = 0.1f; 
                     controlX1 = x1;
                     controlY1 = y1 + (y2 - y1) * factorCurva;
                     controlX2 = x2;
@@ -931,7 +930,7 @@ namespace ArbolFamiliar
                 foreach (var c in p.Children)
                 {
                     if (c == null) continue;
-                    // Asegurarnos de que la clave exista (ya lo hacemos arriba)
+                    // Asegurarnos de que la clave exista 
                     if (!nueva.ContainsKey(p)) nueva[p] = new List<Person>();
                     if (!nueva[p].Contains(c))
                         nueva[p].Add(c);
