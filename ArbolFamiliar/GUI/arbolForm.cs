@@ -273,12 +273,15 @@ namespace ArbolFamiliar
             Invalidate();
         }
 
+        
         private Person DetectClickedPerson(MouseEventArgs e)
         {
             float worldX = (e.X - panOffset.X - sidePanel.Width) / zoom;
             float worldY = (e.Y - panOffset.Y) / zoom;
 
             int radius = grafo.Radius;
+
+            // Buscar en TODOS los árboles (principal y sub-árboles)
             foreach (var p in grafo.GetAllPersons())
             {
                 float dx = worldX - (p.x + radius);

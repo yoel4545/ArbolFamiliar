@@ -20,6 +20,8 @@ namespace ArbolFamiliar
         public int level { get; set; }
         public double Latitud { get; set; }
         public double Longitud { get; set; }
+        public bool EsSubArbol { get; set; }
+        public Person RaizSubArbol { get; set; }
 
         public int Edad
         {
@@ -161,13 +163,8 @@ namespace ArbolFamiliar
 
         public bool CanAddParent()
         {
-            if (partner != null)
-            {
-                if (partner.parents[1] != null || partner.parents[0] != null)
-                {
-                    return false;
-                }
-            }
+            // PERMITIR agregar padres incluso si tiene pareja
+            // Solo verificar que no tenga ya 2 padres
             return !(parents[0] != null && parents[1] != null);
         }
 
