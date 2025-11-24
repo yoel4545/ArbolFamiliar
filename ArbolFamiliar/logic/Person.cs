@@ -127,7 +127,7 @@ namespace ArbolFamiliar
                 {
                     newPartner.children.Add(hijo);
 
-                   También agregar a newPartner como padre del hijo
+                   //También agregar a newPartner como padre del hijo
                     if (hijo.CanAddParent())
                     {
                         hijo.AddParent(newPartner);
