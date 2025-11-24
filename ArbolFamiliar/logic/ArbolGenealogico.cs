@@ -55,29 +55,29 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
             CalculatePositions();
         }
 
-        public void AddChildren(Person father, Person child) 
+        public void AddChildren(Person father, Person child)
         {
             if (!adyacencia.ContainsKey(father)) AddPerson(father);
             if (!adyacencia.ContainsKey(child)) AddPerson(child);
 
-         
+
             father.AddChild(child);
 
-          
+
             if (child.CanAddParent())
             {
                 child.AddParent(father);
             }
 
-            
+
             adyacencia[father].Add(child);
 
-         
+
             if (father.partner != null)
             {
                 father.partner.AddChild(child);
 
-               
+
                 if (child.CanAddParent())
                 {
                     child.AddParent(father.partner);
@@ -527,6 +527,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                     // Ordenar personas para poner parejas juntas
                     var sortedPersons = new List<Person>();
                     var processed = new HashSet<Person>();
+                    var personLevel = persons.ToDictionary(p => p, p => 0); // 0 = izquierda, 1 = derecha
 
                     foreach (var person in persons)
                     {
@@ -534,9 +535,25 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
 
                         if (person.Partner != null && persons.Contains(person.Partner))
                         {
-                            // Agregar pareja junta
-                            sortedPersons.Add(person);
-                            sortedPersons.Add(person.Partner);
+                            // DECIDIR en qué lado poner a cada uno de la pareja
+                            int sidePerson = DeterminarLadoOptimo(person, persons);
+                            int sidePartner = (sidePerson == 0) ? 1 : 0;
+
+                            personLevel[person] = sidePerson;
+                            personLevel[person.Partner] = sidePartner;
+
+                            // Agregar en el orden correcto
+                            if (sidePerson == 0) // persona a la izquierda
+                            {
+                                sortedPersons.Add(person);
+                                sortedPersons.Add(person.Partner);
+                            }
+                            else // persona a la derecha
+                            {
+                                sortedPersons.Add(person.Partner);
+                                sortedPersons.Add(person);
+                            }
+
                             processed.Add(person);
                             processed.Add(person.Partner);
                         }
@@ -975,6 +992,69 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                     }
                 }
             }
+        }
+        private int DeterminarLadoOptimo(Person persona, List<Person> personasNivel)
+        {
+            // ESTRATEGIA MEJORADA: Analizar toda la estructura familiar
+
+            // 1. Si tiene pareja y la pareja ya está posicionada, usar el lado opuesto
+            if (persona.Partner != null && persona.Partner.x != 0)
+            {
+                return (persona.Partner.x < persona.x) ? 1 : 0;
+            }
+
+            // 2. Analizar la posición de los padres (si existen)
+            float promedioPadresX = 0;
+            int padresCount = 0;
+
+            if (persona.Parents != null)
+            {
+                foreach (var padre in persona.Parents)
+                {
+                    if (padre != null && padre.x != 0)
+                    {
+                        promedioPadresX += padre.x;
+                        padresCount++;
+                    }
+                }
+            }
+
+            if (padresCount > 0)
+            {
+                promedioPadresX /= padresCount;
+                // Si los padres están principalmente a la izquierda, poner a la persona a la derecha
+                return (promedioPadresX < 400) ? 1 : 0;
+            }
+
+            // 3. Analizar la posición de los hijos (si existen)
+            float promedioHijosX = 0;
+            int hijosCount = 0;
+
+            if (persona.Children != null && persona.Children.Count > 0)
+            {
+                foreach (var hijo in persona.Children)
+                {
+                    if (hijo != null && hijo.x != 0)
+                    {
+                        promedioHijosX += hijo.x;
+                        hijosCount++;
+                    }
+                }
+            }
+
+            if (hijosCount > 0)
+            {
+                promedioHijosX /= hijosCount;
+                // Si los hijos están principalmente a la izquierda, poner a la persona a la derecha
+                return (promedioHijosX < 400) ? 1 : 0;
+            }
+
+            // 4. Estrategia de balanceo por nivel
+            int personasEnNivel = personasNivel.Count;
+            int indicePersona = personasNivel.IndexOf(persona);
+
+            // Alternar lados para balancear el nivel
+            return (indicePersona % 2 == 0) ? 0 : 1;
         }
         private void DibujarLineaCurva(Graphics g, Pen pen, float x1, float y1, float x2, float y2)
         {
