@@ -429,6 +429,11 @@ namespace ArbolFamiliar
             }
         }
 
+        private void arbolForm_Load_1(object sender, EventArgs e)
+        {
+
+        }
+
         private void BtnCenter_Click(object sender, EventArgs e)
         {
             panOffset = new Point(0, 0);

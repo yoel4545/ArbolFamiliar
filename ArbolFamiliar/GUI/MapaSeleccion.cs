@@ -80,14 +80,35 @@ namespace ArbolFamiliar
 
         private void InitializeComponent()
         {
+            this.mapa.SuspendLayout();
             this.SuspendLayout();
-
+             
+            // mapa
+            
+            this.mapa.Size = new System.Drawing.Size(800, 600);
+            this.mapa.Load += new System.EventHandler(this.mapa_Load);
+            
+            // btnEstadisticas
+            
+            this.btnEstadisticas.FlatAppearance.BorderSize = 0;
             this.btnEstadisticas.Location = new System.Drawing.Point(113, 100);
             this.btnEstadisticas.Text = "";
-
+            
+            // btnRegresar
+            
+            this.btnRegresar.FlatAppearance.BorderSize = 0;
+            
+            // MapaSeleccion
+            
             this.ClientSize = new System.Drawing.Size(800, 600);
             this.Name = "MapaSeleccion";
+            this.mapa.ResumeLayout(false);
             this.ResumeLayout(false);
+
+        }
+
+        private void mapa_Load(object sender, EventArgs e)
+        {
 
         }
     }

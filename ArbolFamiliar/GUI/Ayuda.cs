@@ -30,7 +30,7 @@ namespace ArbolFamiliar
             // Fondo base
             this.BackColor = ColorTranslator.FromHtml("#f5f3eb");
 
-            // --- Título principal ---
+            // Título principal 
             Label lblTitulo = new Label()
             {
                 Text = "Centro de Ayuda - Árbol Genealógico Familiar",
@@ -43,7 +43,7 @@ namespace ArbolFamiliar
             };
             this.Controls.Add(lblTitulo);
 
-            // --- TabControl central ---
+            // TabControl central 
             tabControl = new TabControl()
             {
                 Location = new Point(60, 100),
@@ -117,7 +117,7 @@ namespace ArbolFamiliar
             return b;
         }
 
-        // --- Métodos de creación de pestañas ---
+        // Métodos de creación de pestañas 
 
         private void CrearTabIntroduccion()
         {

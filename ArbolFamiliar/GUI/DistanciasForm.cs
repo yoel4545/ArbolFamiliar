@@ -16,7 +16,7 @@ namespace ArbolFamiliar
         private void MostrarDistancias(Person persona, Dictionary<Person, double> distancias)
         {
             this.Text = $"Distancias desde {persona.GetName}";
-            this.Size = new Size(450, 600); // Un poco más ancho para la información
+            this.Size = new Size(450, 600); 
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -84,9 +84,6 @@ namespace ArbolFamiliar
                     listDistancias.Items.Add($"{nombre} {distancia} km");
                 }
             }
-
-            // Opcional: Ordenar por distancia (más cercanos primero)
-            // Podemos agregar esta funcionalidad si es necesaria
 
             this.Controls.AddRange(new Control[] {
                 lblInfoPersona,

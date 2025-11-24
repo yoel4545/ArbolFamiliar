@@ -80,8 +80,6 @@ namespace ArbolFamiliar
             AbrirFormulario(nuevoFormulario);
         }
 
-       
-
         private void button1_Click_1(object sender, EventArgs e)
         {
             DialogResult resultado = MessageBox.Show(

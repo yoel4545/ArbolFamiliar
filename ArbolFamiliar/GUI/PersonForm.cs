@@ -10,7 +10,7 @@ namespace ArbolFamiliar
 {
     public partial class PersonForm : Form
     {
-        // Campos visuales (mismos nombres para no romper lógica externa)
+        // Campos visuales 
         public TextBox txtNombre, txtId, txtLatitud, txtLongitud;
         public DateTimePicker dateNacimiento, dateFallecimiento;
         public CheckBox chkViva;
@@ -20,7 +20,7 @@ namespace ArbolFamiliar
         public Button btnSeleccionarUbicacion;
         public string titulo;
 
-        // Propiedades de salida (igual que antes)
+        // Propiedades de salida 
         public string FotoPath { get; private set; } = "";
         public bool Confirmado { get; private set; } = false;
 
@@ -56,16 +56,16 @@ namespace ArbolFamiliar
             // Fondo tipo pergamino suave para mantener la estética vintage
             this.BackColor = ColorTranslator.FromHtml("#f5f3eb");
 
-            // Fuente base para controles (mantiene legibilidad)
+            // Fuente base para controles
             this.Font = new Font("Segoe UI", 10, FontStyle.Regular);
         }
 
-        // Crea y posiciona todos los controles del formulario (estética mejorada)
+        // Crea y posiciona todos los controles del formulario 
         private void CrearControles()
         {
             int y = 18;
 
-            // Título (Garamond para un toque clásico)
+            // Título 
             Label lblTitulo = new Label
             {
                 Text = this.titulo.ToUpper(),
@@ -166,7 +166,7 @@ namespace ArbolFamiliar
             dateFallecimiento.Enabled = !chkViva.Checked;
         }
 
-        // Selección de imagen de foto (igual lógica)
+        // Selección de imagen de foto 
         private void BtnSeleccionarFoto_Click(object sender, EventArgs e)
         {
             OpenFileDialog dlg = new OpenFileDialog();
@@ -188,7 +188,7 @@ namespace ArbolFamiliar
             }
         }
 
-        // Abrir mapa en modo selección (misma lógica)
+        // Abrir mapa en modo selección 
         private void BtnSeleccionarUbicacion_Click(object sender, EventArgs e)
         {
             using (var mapaSeleccion = new MapaSeleccion())
@@ -201,7 +201,7 @@ namespace ArbolFamiliar
             }
         }
 
-        // Aceptar: validar y cerrar con OK (misma lógica)
+        // Aceptar: validar y cerrar con OK 
         private void BtnAceptar_Click(object sender, EventArgs e)
         {
             if (ValidarDatos())
@@ -222,7 +222,7 @@ namespace ArbolFamiliar
             this.Close();
         }
 
-        // Validaciones (idénticas, no cambié mensajes ni reglas)
+        // Validaciones
         private bool ValidarDatos()
         {
             if (string.IsNullOrWhiteSpace(txtNombre.Text))
@@ -263,7 +263,7 @@ namespace ArbolFamiliar
             return true;
         }
 
-        // Mensaje de error (igual)
+        // Mensaje de error 
         private void MostrarError(string mensaje)
         {
             MessageBox.Show(mensaje, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -275,7 +275,7 @@ namespace ArbolFamiliar
             return chkViva.Checked ? (DateTime?)null : dateFallecimiento.Value;
         }
 
-        // Carga la info existente (idéntico)
+        // Carga la info existente 
         private void AddExistingInfo()
         {
             if (selectedPerson == null) return;
@@ -312,7 +312,7 @@ namespace ArbolFamiliar
 
         
 
-        // Métodos auxiliares para crear controles con estilo (no cambian lógica externa)
+        // Métodos auxiliares para crear controles con estilo
 
         private Label CrearLabel(string texto, int x, int y)
         {
@@ -375,7 +375,7 @@ namespace ArbolFamiliar
             };
             btn.FlatAppearance.BorderSize = 0;
 
-            // Para redondear, definimos la región en el evento Paint (compatible con versiones antiguas)
+            // Para redondear, definimos la región en el evento Paint 
             btn.Paint += delegate (object sender, PaintEventArgs e)
             {
                 Button b = (Button)sender;
@@ -396,7 +396,7 @@ namespace ArbolFamiliar
             return btn;
         }
 
-        // Validaciones relacionadas con fechas (idénticas)
+        // Validaciones relacionadas con fechas 
         private bool VerificarFechaNacimiento()
         {
             if (dateNacimiento.Value > DateTime.Now)
