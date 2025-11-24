@@ -111,11 +111,7 @@ namespace ArbolFamiliar
             this.ResumeLayout(false);
         }
 
-        //<summary>
-        // Aplica estilo visual consistente a los botones
-        // </summary>
-        // <param name="boton">Botón a estilizar</param>
-        // <param name="colorHex">Color en formato hexadecimal</param>
+ 
         private void AplicarEstiloBoton(Button boton, string colorHex)
         {
             // Configuración básica de colores y estilo
