@@ -32,6 +32,8 @@ namespace ArbolFamiliar
             if (grafo == null)
             {
                 grafo = new GrafoGenealogico();
+                // AGREGAR ESTA LÍNEA ↓
+                grafo.CrearNodoInicial();
             }
 
             this.Load += ArbolForm_Load;
