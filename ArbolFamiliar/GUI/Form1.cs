@@ -55,7 +55,16 @@ namespace ArbolFamiliar
             }
 
             var personas = new List<Person>(arbolForm.grafo.GetAllPersons());
-            Mapa nuevoFormulario = new Mapa(personas, arbolForm.grafo);
+            var personasConCoordenadas = personas.Where(p => p.Latitud != 0 && p.Longitud != 0).ToList();
+
+            if (personasConCoordenadas.Count < 2)
+            {
+                MessageBox.Show("Debe haber al menos dos personas con coordenadas geográficas válidas para visualizar el mapa.",
+                                "Coordenadas insuficientes", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            Mapa nuevoFormulario = new Mapa(personasConCoordenadas, arbolForm.grafo);
             AbrirFormulario(nuevoFormulario);
         }
 
