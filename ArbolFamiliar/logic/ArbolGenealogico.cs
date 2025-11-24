@@ -6,7 +6,7 @@ using System.Linq;
 using System.Windows.Forms;
 using ArbolFamiliar;
 
-namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un hijo o padre, que sea coherente. Faltan los metodos para cordenadas.
+namespace ArbolFamiliar
 {
     public class GrafoGenealogico
     {
@@ -91,13 +91,6 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
         public void AddParent(Person child, Person father)
         {
             if (child == null || father == null) return;
-
-            // ELIMINAR esta parte que causa problemas ↓
-            // if (child.Partner != null)
-            // {
-            //     father.EsSubArbol = true;
-            //     father.RaizSubArbol = child;
-            // }
 
             if (!adyacencia.ContainsKey(father)) AddPerson(father);
             if (!adyacencia.ContainsKey(child)) AddPerson(child);
@@ -353,9 +346,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                 float vGap = verticalSpacing;
                 float coupleGap = Math.Max(hGap * 1.5f, 120f);
 
-                // =====================================================================
-                // (0) Recalcular niveles globales - MANTENER ESTO
-                // =====================================================================
+                // 0 Recalcular niveles globales - MANTENER ESTO
 
                 var allNodes = new HashSet<Person>(adyacencia.Keys);
                 foreach (var kv in adyacencia)
@@ -365,7 +356,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                     if (kv.Key.Partner != null) allNodes.Add(kv.Key.Partner);
                 }
 
-                // --- Union-Find para agrupar parejas ---
+                // Union-Find para agrupar parejas 
                 var parentMap = new Dictionary<Person, Person>();
                 Person Find(Person a)
                 {
@@ -386,7 +377,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                 foreach (var n in allNodes)
                     if (n?.Partner != null) Union(n, n.Partner);
 
-                // --- Construir componentes ---
+                // Construir componentes
                 var compMembers = new Dictionary<Person, List<Person>>();
                 foreach (var n in allNodes)
                 {
@@ -395,7 +386,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                     compMembers[r].Add(n);
                 }
 
-                // --- Crear grafo de componentes ---
+                // Crear grafo de componentes
                 var compIndex = new Dictionary<Person, int>();
                 int cidx = 0;
                 foreach (var rep in compMembers.Keys) compIndex[rep] = cidx++;
@@ -426,7 +417,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                     }
                 }
 
-                // --- Kahn: topological sort sobre componentes ---
+                // Kahn: topological sort sobre componentes 
                 var compLevel = new int[compMembers.Count];
                 for (int i = 0; i < compLevel.Length; i++) compLevel[i] = int.MinValue;
 
@@ -470,9 +461,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                     }
                 }
 
-                // =====================================================================
-                // (1) POSICIONAMIENTO SIMPLE - TODOS EN EL MISMO ÁRBOL
-                // =====================================================================
+                // 1 POSICIONAMIENTO SIMPLE - TODOS EN EL MISMO ÁRBOL
 
                 // Agrupar por nivel
                 var byLevel = allNodes.GroupBy(p => p.GetLevel)
@@ -585,9 +574,8 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                     }
                 }
 
-                // =====================================================================
-                // (2) ANTI-COLISIÓN MEJORADA
-                // =====================================================================
+                // 2 ANTI-COLISIÓN MEJORADA
+
                 var nodesByLevel = allNodes
                     .GroupBy(p => p.GetLevel)
                     .ToDictionary(g => g.Key, g => g.OrderBy(n => n.x).ToList());
@@ -645,106 +633,8 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                 if (x > 800) { x = 50; y += verticalSpacing; }
             }
         }
-        // =====================================================================
-        // Métodos auxiliares para sub-árboles
-        // =====================================================================
 
-        private HashSet<Person> ColectarPersonasSubArbol(Person raiz)
-        {
-            var personas = new HashSet<Person>();
-            var stack = new Stack<Person>();
-            stack.Push(raiz);
-
-            while (stack.Count > 0)
-            {
-                var actual = stack.Pop();
-                if (actual == null || personas.Contains(actual)) continue;
-
-                personas.Add(actual);
-
-                // Agregar padres
-                if (actual.Parents != null)
-                {
-                    foreach (var padre in actual.Parents)
-                        if (padre != null) stack.Push(padre);
-                }
-
-                // Agregar hijos
-                if (actual.Children != null)
-                {
-                    foreach (var hijo in actual.Children)
-                        if (hijo != null) stack.Push(hijo);
-                }
-
-                // Agregar pareja
-                if (actual.Partner != null) stack.Push(actual.Partner);
-            }
-
-            return personas;
-        }
-
-        private float PosicionarSubArbolIndependiente(Person raiz, float xBase, float yBase, float hGap, float vGap)
-        {
-            var personasSubArbol = ColectarPersonasSubArbol(raiz);
-
-
-            // Calcular niveles relativos dentro del sub-árbol
-            var niveles = personasSubArbol.GroupBy(p => p.GetLevel).OrderBy(g => g.Key).ToList();
-            int nivelMinimo = niveles.Min(g => g.Key);
-
-            // Posicionar cada persona del sub-árbol
-            float maxAncho = 0f;
-
-            foreach (var nivelGroup in niveles)
-            {
-                int nivelRelativo = nivelGroup.Key - nivelMinimo;
-                float y = yBase + (nivelRelativo * vGap);
-                var personasNivel = nivelGroup.ToList();
-
-                // Distribuir horizontalmente
-                float anchoNivel = personasNivel.Count * (hGap * 2);
-                float xInicio = xBase;
-
-                for (int i = 0; i < personasNivel.Count; i++)
-                {
-                    var persona = personasNivel[i];
-                    persona.x = xInicio + (i * hGap * 2);
-                    persona.y = y;
-
-                    // Posicionar pareja al lado si existe
-                    if (persona.Partner != null && personasSubArbol.Contains(persona.Partner))
-                    {
-                        persona.Partner.x = persona.x + hGap;
-                        persona.Partner.y = y;
-                        i++; // Saltar el siguiente slot
-                    }
-                }
-
-                maxAncho = Math.Max(maxAncho, anchoNivel);
-            }
-
-            return maxAncho;
-        }
-
-        // =====================================================================
         // Debug helper: imprime componentes (parejas) y sus niveles
-        // =====================================================================
-        private void DebugPrintComponents(Dictionary<Person, List<Person>> compMembers,
-                                         Dictionary<Person, int> compIndex,
-                                         int[] compLevel)
-        {
-            Debug.WriteLine("======= COMPONENTES Y NIVELES =======");
-            foreach (var kv in compMembers)
-            {
-                int idx = compIndex[kv.Key];
-                int lvl = compLevel[idx];
-                string members = string.Join(", ", kv.Value.Select(m => m.GetName));
-                Debug.WriteLine($"Nivel {lvl}: [{members}]");
-            }
-            Debug.WriteLine("====================================");
-        }
-
-
 
         public void DrawNodes(Graphics g)
         {
@@ -758,7 +648,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
 
             int diameter = radius * 2;
 
-            // === 1️⃣ VERIFICAR Y LIMPIAR COORDENADAS INVÁLIDAS ===
+            // === 1️ VERIFICAR Y LIMPIAR COORDENADAS INVÁLIDAS ===
             foreach (var persona in adyacencia.Keys)
             {
                 if (float.IsNaN(persona.x) || float.IsInfinity(persona.x) ||
@@ -769,7 +659,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                 }
             }
 
-            // === 2️⃣ SOLO UN SISTEMA DE CONEXIONES - LÍNEAS DIRECTAS ===
+            // === 2️ SOLO UN SISTEMA DE CONEXIONES - LÍNEAS DIRECTAS ===
             foreach (var kvp in adyacencia)
             {
                 var padre = kvp.Key;
@@ -822,7 +712,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                 }
             }
 
-            // === 3️⃣ Dibujar líneas entre parejas ===
+            // === 3️ Dibujar líneas entre parejas ===
             foreach (var kvp in adyacencia)
             {
                 var persona = kvp.Key;
@@ -895,104 +785,7 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
                    !float.IsNaN(y) && !float.IsInfinity(y) &&
                    Math.Abs(x) < 10000 && Math.Abs(y) < 10000;
         }
-        private void DibujarFlecha(Graphics g, Pen pen, float x1, float y1, float x2, float y2)
-        {
-            // Calcular punto medio
-            float mx = (x1 + x2) / 2;
-            float my = (y1 + y2) / 2;
-
-            // Calcular ángulo de la línea
-            double angle = Math.Atan2(y2 - y1, x2 - x1);
-
-            // Tamaño de la flecha
-            float arrowSize = 8;
-
-            // Puntos de la flecha
-            PointF[] arrowPoints = new PointF[3];
-
-            // Punta de la flecha
-            arrowPoints[0] = new PointF(mx, my);
-
-            // Base de la flecha
-            arrowPoints[1] = new PointF(
-                (float)(mx - arrowSize * Math.Cos(angle - Math.PI / 6)),
-                (float)(my - arrowSize * Math.Sin(angle - Math.PI / 6))
-            );
-
-            arrowPoints[2] = new PointF(
-                (float)(mx - arrowSize * Math.Cos(angle + Math.PI / 6)),
-                (float)(my - arrowSize * Math.Sin(angle + Math.PI / 6))
-            );
-
-            // Dibujar flecha
-            g.FillPolygon(Brushes.Gray, arrowPoints);
-        }
-        // =====================================================================
-        // Métodos auxiliares para dibujar sub-árboles
-        // =====================================================================
-        private void DibujarSubArbolCompleto(Graphics g, Person raizSubArbol, Pen lineaSubArbol, Pen lineaPareja)
-        {
-            var personasSubArbol = ColectarPersonasSubArbol(raizSubArbol);
-
-            // === A. Dibujar líneas entre parejas en el sub-árbol ===
-            foreach (var persona in personasSubArbol)
-            {
-                if (persona.Partner != null && personasSubArbol.Contains(persona.Partner))
-                {
-                    float x1 = persona.x + radius;
-                    float y1 = persona.y + radius;
-                    float x2 = persona.Partner.x + radius;
-                    float y2 = persona.Partner.y + radius;
-
-                    g.DrawLine(lineaPareja, x1, y1, x2, y2);
-                }
-            }
-
-            // === B. Dibujar conexiones padres → hijos en el sub-árbol ===
-            foreach (var persona in personasSubArbol)
-            {
-                if (persona.Children == null || persona.Children.Count == 0)
-                    continue;
-
-                // Filtrar hijos que están en el mismo sub-árbol
-                var hijosSubArbol = persona.Children.Where(h => h != null && personasSubArbol.Contains(h)).ToList();
-                if (hijosSubArbol.Count == 0) continue;
-
-                // Punto de salida
-                float xOrigen, yOrigen;
-
-                if (persona.Partner != null && personasSubArbol.Contains(persona.Partner))
-                {
-                    xOrigen = (persona.x + persona.Partner.x) / 2f + radius;
-                    yOrigen = persona.y + radius;
-                }
-                else
-                {
-                    xOrigen = persona.x + radius;
-                    yOrigen = persona.y + radius;
-                }
-
-                // Dibujar conexiones
-                if (hijosSubArbol.Count > 0)
-                {
-                    float yConexion = hijosSubArbol[0].y - 20;
-                    g.DrawLine(lineaSubArbol, xOrigen, yOrigen, xOrigen, yConexion);
-
-                    // Línea horizontal
-                    float minX = hijosSubArbol.Min(h => h.x + radius);
-                    float maxX = hijosSubArbol.Max(h => h.x + radius);
-                    g.DrawLine(lineaSubArbol, minX, yConexion, maxX, yConexion);
-
-                    // Líneas verticales a cada hijo
-                    foreach (var h in hijosSubArbol)
-                    {
-                        float xHijo = h.x + radius;
-                        float yHijo = h.y;
-                        g.DrawLine(lineaSubArbol, xHijo, yConexion, xHijo, yHijo);
-                    }
-                }
-            }
-        }
+        
         private int DeterminarLadoOptimo(Person persona, List<Person> personasNivel)
         {
             // ESTRATEGIA MEJORADA: Analizar toda la estructura familiar
@@ -1147,28 +940,6 @@ namespace ArbolFamiliar //Se deberia agregar que verifica la edad al agregar un 
 
             // Reemplazar la estructura
             adyacencia = nueva;
-        }
-
-        public void PrintChildren(Person p)
-        {
-            if (p == null) return;
-            if (adyacencia.ContainsKey(p))
-            {
-                var hijos = adyacencia[p];
-                if (hijos != null && hijos.Count > 0)
-                {
-                    string nombresHijos = string.Join(", ", hijos.ConvertAll(h => h.GetName));
-                    Debug.WriteLine($"Padre: {p.GetName} → Hijos: [{nombresHijos}]");
-                }
-                else
-                {
-                    Debug.WriteLine($"Padre: {p.GetName} → (sin hijos)");
-                }
-            }
-            else
-            {
-                Debug.WriteLine($"Padre: {p.GetName} → (no está en adyacencia)");
-            }
         }
     }
 }
